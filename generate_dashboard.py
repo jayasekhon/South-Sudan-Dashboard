@@ -273,15 +273,10 @@ def compute_kpis(results):
 
     dtm = results.get("displacement_dtm")
     if dtm and dtm["status"] == "ok" and dtm["data"]:
-        df = _to_dataframe(dtm["data"])
-        num_col = _find_column(df, ["displaced", "idp", "individuals", "population"])
-        if num_col is not None:
-            try:
-                total = pd.to_numeric(df[num_col], errors="coerce").sum()
-                if total:
-                    kpis.append({"label": "Displaced (latest)", "value": f"{int(total):,}", "tone": "warn"})
-            except Exception:
-                pass
+        trend = extract_grouped_trend(dtm["data"], "adminLevel", 0, "reportingDate", "numPresentIdpInd", agg="sum")
+        if trend is not None and not trend.empty:
+            latest = int(trend.iloc[-1])
+            kpis.append({"label": "Displaced (latest)", "value": f"{latest:,}", "tone": "warn"})
 
     cbpf = results.get("funding_cbpf")
     if cbpf and cbpf["status"] == "ok" and cbpf["data"]:
@@ -335,6 +330,105 @@ def normalize_admin_name(name):
     return s.strip()
 
 
+def extract_ipc_phase_by_state(data):
+    """
+    Correctly extract {normalized_state_name: highest_ipc_phase} from the
+    real IPC HDX resource shape. This data has one row per (state, validity
+    period, phase category) — including non-numeric aggregate rows like
+    "all" and "3+" — so naive numeric coercion or unfiltered max() gets
+    confused. This:
+      - keeps only pure numeric phase rows (1-5), dropping "all"/"3+"
+      - keeps only the nearer-term "first projection" period, to avoid
+        mixing two different time windows into one figure
+      - drops phase rows with zero population (not meaningfully "present")
+      - takes the highest phase per state that still has population in it
+    """
+    df = _to_dataframe(data)
+    if df.empty:
+        return {}
+
+    admin_col = _find_key(data[0], ADMIN_COL_HINTS)
+    if not admin_col or "Phase" not in df.columns:
+        return {}
+
+    df = df[df["Phase"].isin(["1", "2", "3", "4", "5"])]
+    if "Validity period" in df.columns and (df["Validity period"] == "first projection").any():
+        df = df[df["Validity period"] == "first projection"]
+    if "Number" in df.columns:
+        df = df[pd.to_numeric(df["Number"], errors="coerce").fillna(0) > 0]
+    if df.empty:
+        return {}
+
+    df["Phase"] = df["Phase"].astype(int)
+    grouped = df.groupby(admin_col)["Phase"].max()
+    return {normalize_admin_name(k): v for k, v in grouped.items()}
+
+
+def extract_grouped_trend(data, level_col, level_value, date_col, value_col, agg="mean"):
+    """
+    Shared logic for CHIRPS/DTM: these HDX resources have many rows per
+    date (one per admin unit, or per breakdown category), so a genuine
+    time trend needs filtering to one admin level and aggregating by date
+    — not just sorting raw rows and taking the last N. Returns a sorted
+    pandas Series indexed by date, or None if the shape doesn't match.
+    """
+    df = _to_dataframe(data)
+    if df.empty or level_col not in df.columns or date_col not in df.columns or value_col not in df.columns:
+        return None
+
+    sub = df[df[level_col] == level_value].copy()
+    if sub.empty:
+        return None
+    sub[date_col] = pd.to_datetime(sub[date_col], errors="coerce")
+    sub[value_col] = pd.to_numeric(sub[value_col], errors="coerce")
+    sub = sub.dropna(subset=[date_col, value_col])
+    if sub.empty:
+        return None
+
+    grouped = sub.groupby(date_col)[value_col]
+    series = (grouped.mean() if agg == "mean" else grouped.sum()).sort_index()
+    return series
+
+
+def extract_vam_price_trend(data, commodity_filter="Maize"):
+    """
+    VAM food price data has many rows per date (one per market x
+    commodity), so a genuine national trend needs filtering to one staple
+    commodity and averaging across markets per date.
+    """
+    df = _to_dataframe(data)
+    if df.empty or "commodity" not in df.columns or "date" not in df.columns:
+        return None
+
+    price_col = "usdprice" if "usdprice" in df.columns else ("price" if "price" in df.columns else None)
+    if not price_col:
+        return None
+
+    sub = df[df["commodity"].astype(str).str.contains(commodity_filter, case=False, na=False)].copy()
+    if sub.empty:
+        return None
+    sub["date"] = pd.to_datetime(sub["date"], errors="coerce")
+    sub[price_col] = pd.to_numeric(sub[price_col], errors="coerce")
+    sub = sub.dropna(subset=["date", price_col])
+    if sub.empty:
+        return None
+
+    return sub.groupby("date")[price_col].mean().sort_index()
+
+
+def series_to_chart(series, value_label, max_points=24):
+    """Convert a pandas Series (date-indexed) into the chart dict shape."""
+    if series is None or series.empty:
+        return None
+    tail = series.tail(max_points)
+    return {
+        "type": "line",
+        "labels": [d.strftime("%Y-%m-%d") for d in tail.index],
+        "values": tail.round(2).tolist(),
+        "value_label": value_label,
+    }
+
+
 def build_state_values(data, value_hints, agg="max"):
     """Build {normalized_state_name: value} from a list-of-dict dataset,
     auto-detecting the admin/state column and a numeric value column
@@ -375,7 +469,7 @@ def render_map_section(boundaries, ipc_data):
           <p class="muted">Map unavailable — could not load admin boundaries this run.</p>
         </article>""", None)
 
-    state_values = build_state_values(ipc_data, ["phase"], agg="max")
+    state_values = extract_ipc_phase_by_state(ipc_data)
 
     sample_props = boundaries["features"][0].get("properties", {})
     name_prop = _find_key(sample_props, ADMIN_NAME_PROP_HINTS) or _find_key(sample_props, ["name"])
@@ -509,13 +603,13 @@ def render_chart_card(key, res, chart_id):
           <p class="muted">Could not fetch this — {res['error']}</p>
         </article>""", None
 
-    # IPC data has multiple numeric columns (phase, population, etc.) and a
-    # "period" field that generic auto-detection can mistake for a date
-    # column — producing a nonsensical chart. We already know exactly what
-    # this indicator should show (phase by state), so build it directly
-    # using the same logic the map uses, rather than guessing.
+    # These four sources all have the same underlying shape problem: many
+    # rows share the same date (one per state, market, or category), so
+    # generic "sort by date, take last N rows" logic produces nonsense.
+    # Each needs its correct grouping/aggregation applied explicitly.
+
     if key == "food_security_ipc":
-        state_values = build_state_values(res["data"], ["phase"], agg="max")
+        state_values = extract_ipc_phase_by_state(res["data"])
         if state_values:
             chart = {
                 "type": "bar",
@@ -523,6 +617,39 @@ def render_chart_card(key, res, chart_id):
                 "values": list(state_values.values()),
                 "value_label": "IPC phase",
             }
+            card_html = f"""
+            <article class="card">
+              <header><h2>{label}</h2><span class="tag">{source}</span></header>
+              <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
+            </article>"""
+            return card_html, {"id": chart_id, **chart}
+
+    if key == "rainfall_chirps":
+        series = extract_grouped_trend(res["data"], "adm_level", 1, "date", "rfq", agg="mean")
+        chart = series_to_chart(series, "Rainfall (% of average)")
+        if chart:
+            card_html = f"""
+            <article class="card">
+              <header><h2>{label}</h2><span class="tag">{source}</span></header>
+              <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
+            </article>"""
+            return card_html, {"id": chart_id, **chart}
+
+    if key == "displacement_dtm":
+        series = extract_grouped_trend(res["data"], "adminLevel", 0, "reportingDate", "numPresentIdpInd", agg="sum")
+        chart = series_to_chart(series, "People displaced (national)")
+        if chart:
+            card_html = f"""
+            <article class="card">
+              <header><h2>{label}</h2><span class="tag">{source}</span></header>
+              <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
+            </article>"""
+            return card_html, {"id": chart_id, **chart}
+
+    if key == "food_prices_vam":
+        series = extract_vam_price_trend(res["data"])
+        chart = series_to_chart(series, "Maize price (USD)")
+        if chart:
             card_html = f"""
             <article class="card">
               <header><h2>{label}</h2><span class="tag">{source}</span></header>
