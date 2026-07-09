@@ -72,6 +72,9 @@ INDICATORS = {
         "label": "Conflict trend (aggregate)",
         "source": "HDX / ACLED",
         "category": "chart",
+        "skip_date_filter": True,  # TEMPORARY: unblocking to inspect real column structure;
+                                    # the Month+Year combiner fix in filter_recent should handle
+                                    # this once confirmed — see chat for details
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-acled"),
     },
     "funding_fts": {
