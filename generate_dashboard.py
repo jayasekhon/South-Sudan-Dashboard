@@ -382,11 +382,11 @@ def build_map_init_js(map_config):
     name_prop_json = _safe_json(map_config["name_prop"])
 
     return (
-        "var map = L.map('ssd-map', { scrollWheelZoom: false }).setView([7.5, 30], 6);\n"
+        "var leafletMap = L.map('ssd-map', { scrollWheelZoom: false }).setView([7.5, 30], 6);\n"
         "L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n"
         "  attribution: '&copy; OpenStreetMap contributors',\n"
         "  maxZoom: 10\n"
-        "}).addTo(map);\n"
+        "}).addTo(leafletMap);\n"
         "var geojsonData = " + geojson_json + ";\n"
         "var stateValues = " + values_json + ";\n"
         "var nameProp = " + name_prop_json + ";\n"
@@ -406,9 +406,9 @@ def build_map_init_js(map_config):
         "      var val = stateValues[key];\n"
         "      layer.bindTooltip(name + (val ? (' \\u2014 IPC Phase ' + val) : ' \\u2014 no data'));\n"
         "    }\n"
-        "  }).addTo(map);\n"
+        "  }).addTo(leafletMap);\n"
         "} else {\n"
-        "  L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(map);\n"
+        "  L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(leafletMap);\n"
         "}\n"
     )
 
@@ -573,7 +573,7 @@ def render_html(country, results, out_dir):
               label: {_safe_json(c["value_label"])},
               data: {_safe_json(c["values"])},
               borderColor: '#1F6F5C',
-              backgroundColor: {'rgba(31,111,92,0.12)' if cfg_type == 'line' else "'#C98A3D'"},
+              backgroundColor: {_safe_json('rgba(31,111,92,0.12)' if cfg_type == 'line' else '#C98A3D')},
               fill: {str(cfg_type == 'line').lower()},
               tension: 0.3,
               borderWidth: 2,
@@ -725,7 +725,7 @@ def render_html(country, results, out_dir):
   </div>
 
   <nav class="subnav">
-    <a href="#map">Map</a>
+    <a href="#map-section">Map</a>
     <a href="#situation">Situation feed</a>
     <a href="#indicators">Indicators</a>
     <a href="#funding">Funding</a>
@@ -734,7 +734,7 @@ def render_html(country, results, out_dir):
   {kpis}
 
   <main>
-    <section id="map">
+    <section id="map-section">
       <div class="section-label">Geographic overview</div>
       <div class="grid">{map_html}</div>
     </section>
