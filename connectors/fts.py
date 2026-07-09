@@ -3,28 +3,13 @@ FTS (Financial Tracking Service) connector
 Docs: https://api.hpc.tools/docs/v1/
 Public endpoint, no auth required for the public flow data used here.
 """
+from datetime import date
 import requests
 
 BASE_URL = "https://api.hpc.tools/v1/public/fts/flow"
 
 
-def fetch(country_iso3: str, year: int = None, groupby: str = None):
-    """
-    Fetch humanitarian funding flows for a country from FTS.
-
-    Args:
-        country_iso3: 3-letter ISO country code (e.g. "SSD")
-        year: optional year filter (e.g. 2026). If omitted, FTS returns
-              flows across all years it holds for this country.
-        groupby: optional grouping, e.g. "organization", "cluster", "donor"
-                 (see FTS docs for the full list of valid values)
-
-    Returns:
-        dict with keys like 'flows' (list of individual flow records) and
-        totals — FTS returns a richer structure than a flat list, so this
-        is passed through close to raw rather than flattened, since the
-        shape differs depending on whether groupby is used.
-    """
+def _fetch_year(country_iso3: str, year: int, groupby: str = None):
     params = {"countryISO3": country_iso3}
     if year:
         params["year"] = year
@@ -34,3 +19,31 @@ def fetch(country_iso3: str, year: int = None, groupby: str = None):
     resp = requests.get(BASE_URL, params=params, timeout=30)
     resp.raise_for_status()
     return resp.json().get("data", {})
+
+
+def fetch(country_iso3: str, years=None, groupby: str = None):
+    """
+    Fetch humanitarian funding flows for a country from FTS, across one or
+    more years.
+
+    Args:
+        country_iso3: 3-letter ISO country code (e.g. "SSD")
+        years: iterable of years, e.g. [2026] or range(2026, 2028).
+               Defaults to just the current year if omitted.
+        groupby: optional grouping, e.g. "organization", "cluster", "donor"
+
+    Returns:
+        dict {"flows": [...]} — combined flow records across all requested
+        years (per-year totals aren't preserved when combining years; use
+        the individual flow records for anything that needs a breakdown)
+    """
+    if years is None:
+        years = [date.today().year]
+
+    combined_flows = []
+    for y in years:
+        data = _fetch_year(country_iso3, y, groupby)
+        flows = data.get("flows", []) if isinstance(data, dict) else []
+        combined_flows.extend(flows)
+
+    return {"flows": combined_flows}
