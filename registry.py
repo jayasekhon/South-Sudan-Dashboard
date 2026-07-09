@@ -40,6 +40,7 @@ INDICATORS = {
         "label": "Field reports",
         "source": "IFRC GO",
         "category": "narrative",
+        "skip_date_filter": True,  # same reasoning as emergencies/appeals — best available, not strictly dated
         "fetch": lambda country, iso3: ifrc_go.fetch("field_reports", country_iso3=iso3),
     },
     "food_security_ipc": {
@@ -93,6 +94,7 @@ INDICATORS = {
         "label": "SSHF (Country-Based Pooled Fund) projects",
         "source": "CBPF",
         "category": "funding",
+        "skip_date_filter": True,  # latest available allocations predate 2026 — show them rather than nothing
         "fetch": lambda country, iso3: cbpf.fetch(country_name=country),
     },
 }
