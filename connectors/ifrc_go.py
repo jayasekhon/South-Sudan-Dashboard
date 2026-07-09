@@ -39,13 +39,32 @@ COUNTRY_FILTER = {
 }
 
 
+# Confirmed-correct GO numeric country IDs. The dynamic /country/?iso3=...
+# lookup below turned out to be unreliable in practice — it resolved South
+# Sudan to id=14 (wrong; that ID belongs to some other country), which
+# caused every result to correctly get rejected by the client-side safety
+# check, i.e. genuinely 0 real South Sudan results, not a filtering fluke.
+# 290 was confirmed directly from IFRC's own published country CSV export.
+KNOWN_COUNTRY_IDS = {
+    "SSD": 290,
+}
+
+
 def _resolve_country_id(iso3: str):
+    if iso3 in KNOWN_COUNTRY_IDS:
+        return KNOWN_COUNTRY_IDS[iso3]
+    # Fallback for countries not in the known table — flagged as less
+    # reliable per the SSD experience above; verify with a diagnostic print
+    # if you extend this to a new country.
     resp = requests.get(f"{BASE_URL}/country/", params={"iso3": iso3}, timeout=30)
     resp.raise_for_status()
     results = resp.json().get("results", [])
     if not results:
         raise ValueError(f"Could not resolve a GO country ID for ISO3 '{iso3}'")
-    return results[0]["id"]
+    resolved = results[0]["id"]
+    print(f"  -> IFRC GO: resolved '{iso3}' to id={resolved} via dynamic lookup "
+          f"(unverified — add to KNOWN_COUNTRY_IDS once confirmed)")
+    return resolved
 
 
 def _matches_country(item, iso3):
