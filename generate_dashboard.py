@@ -69,6 +69,39 @@ def _find_date_column(sample_row: dict):
     return _find_key(sample_row, DATE_COL_HINTS)
 
 
+def _parse_date_value(raw, row=None, date_col=None):
+    """
+    Parse a single date-like value, handling two real-world gotchas:
+    1. Bare years (e.g. 2026, or "2026") — pandas' pd.to_datetime(2026)
+       treats a bare int as nanoseconds since 1970-01-01, NOT the year
+       2026. Any 4-digit value in a plausible year range is treated as
+       January 1 of that year instead.
+    2. Separate Month + Year columns (common in "events by month-year"
+       exports, e.g. ACLED-derived datasets) — if the date_col found is a
+       month name/number with no year in it, and a sibling "Year" column
+       exists on the same row, they're combined.
+    """
+    if row is not None and date_col is not None:
+        norm_col = date_col.lower()
+        if "month" in norm_col and "year" not in norm_col:
+            year_col = next((c for c in row.keys() if "year" in c.lower()), None)
+            if year_col and row.get(year_col) not in (None, ""):
+                combined = f"{raw} {row[year_col]}"
+                parsed = pd.to_datetime(combined, errors="coerce")
+                if pd.notna(parsed):
+                    return parsed
+
+    # Bare year detection (int or numeric string, plausible year range)
+    try:
+        as_int = int(float(raw))
+        if 1990 <= as_int <= 2100 and str(raw).strip() in (str(as_int), f"{as_int}.0"):
+            return pd.Timestamp(year=as_int, month=1, day=1)
+    except (TypeError, ValueError):
+        pass
+
+    return pd.to_datetime(raw, errors="coerce")
+
+
 def filter_recent(data, start=DATA_START_DATE, end=None):
     """
     Best-effort recency filter applied uniformly across every source.
@@ -103,7 +136,7 @@ def filter_recent(data, start=DATA_START_DATE, end=None):
         raw = row.get(date_col)
         if raw in (None, ""):
             continue
-        parsed = pd.to_datetime(raw, errors="coerce")
+        parsed = _parse_date_value(raw, row=row, date_col=date_col)
         if pd.isna(parsed):
             if len(unparseable_samples) < 3:
                 unparseable_samples.append(raw)
