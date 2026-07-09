@@ -766,6 +766,8 @@ def main():
     parser.add_argument("--country", help="Country name, e.g. South Sudan")
     parser.add_argument("--iso3", help="ISO3 code, e.g. SSD")
     parser.add_argument("--indicators", help="Comma-separated indicator keys, or 'all'")
+    parser.add_argument("--output-html", help="Also copy the rendered dashboard to this exact path "
+                                                "(e.g. docs/index.html) — used for CI/GitHub Pages publishing.")
     args = parser.parse_args()
 
     if args.country and args.iso3 and args.indicators:
@@ -786,6 +788,12 @@ def main():
     results = fetch_all(country, iso3, indicator_keys)
     save_csvs(results, out_dir)
     html_path = render_html(country, results, out_dir)
+
+    if args.output_html:
+        import shutil
+        os.makedirs(os.path.dirname(args.output_html) or ".", exist_ok=True)
+        shutil.copy(html_path, args.output_html)
+        print(f"Also copied to: {args.output_html}")
 
     print(f"\nDone. Dashboard: {html_path}")
 
