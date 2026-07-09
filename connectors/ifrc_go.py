@@ -81,13 +81,19 @@ def fetch(indicator: str, country_iso3: str, keyword: str = None, limit: int = 5
     endpoint = ENDPOINTS[indicator]
     param_name, param_type = COUNTRY_FILTER[endpoint]
 
-    params = {"limit": limit}
-    params[param_name] = country_iso3 if param_type == "iso3" else _resolve_country_id(country_iso3)
+    resolved_id = country_iso3 if param_type == "iso3" else _resolve_country_id(country_iso3)
+    params = {"limit": limit, param_name: resolved_id}
     if keyword:
         params["search"] = keyword
 
     resp = requests.get(f"{BASE_URL}/{endpoint}/", params=params, timeout=30)
     resp.raise_for_status()
-    results = resp.json().get("results", [])
+    body = resp.json()
+    results = body.get("results", [])
+    matched = [r for r in results if _matches_country(r, country_iso3)]
 
-    return [r for r in results if _matches_country(r, country_iso3)]
+    print(f"  -> IFRC GO [{indicator}]: requested {param_name}={resolved_id!r}, "
+          f"API reports {body.get('count', '?')} total, page returned {len(results)}, "
+          f"{len(matched)} passed the country safety-check")
+
+    return matched
