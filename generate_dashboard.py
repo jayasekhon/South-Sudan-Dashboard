@@ -29,6 +29,17 @@ from registry import available_indicators, fetch_indicator, INDICATORS
 
 OUTPUT_ROOT = os.path.join(os.path.dirname(__file__), "output")
 
+
+def _safe_json(obj):
+    """json.dumps for embedding inside a <script> tag. If any string value
+    in the data happens to contain the literal characters '</script', the
+    HTML parser closes our script tag early — before the browser's JS
+    engine ever sees it — silently breaking every chart and the map with
+    no error message at all. Real report titles/org names/descriptions can
+    contain almost anything, so this isn't hypothetical. Escaping '</' as
+    '<\\/' is the standard fix and is a no-op for normal JSON content."""
+    return json.dumps(obj).replace("</", "<\\/")
+
 DATE_COL_HINTS = ["date", "month", "year", "period", "reportingdate", "created"]
 NUMERIC_HINTS = ["amount", "value", "usd", "total", "count", "fatal", "displaced",
                   "population", "price", "anomaly", "phase", "rainfall"]
@@ -366,9 +377,9 @@ def build_map_init_js(map_config):
     braces never need escaping — only the JSON payloads are substituted in."""
     if not map_config:
         return ""
-    geojson_json = json.dumps(map_config["geojson"])
-    values_json = json.dumps(map_config["values"])
-    name_prop_json = json.dumps(map_config["name_prop"])
+    geojson_json = _safe_json(map_config["geojson"])
+    values_json = _safe_json(map_config["values"])
+    name_prop_json = _safe_json(map_config["name_prop"])
 
     return (
         "var map = L.map('ssd-map', { scrollWheelZoom: false }).setView([7.5, 30], 6);\n"
@@ -467,7 +478,7 @@ def render_chart_card(key, res, chart_id):
     card_html = f"""
     <article class="card">
       <header><h2>{label}</h2><span class="tag">{source}</span></header>
-      <canvas id="{chart_id}" height="160"></canvas>
+      <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
     </article>"""
     return card_html, {"id": chart_id, **chart}
 
@@ -500,7 +511,7 @@ def render_funding_card(key, res, chart_id):
     card_html = f"""
     <article class="card">
       <header><h2>{label}</h2><span class="tag">{source}</span></header>
-      <canvas id="{chart_id}" height="160"></canvas>
+      <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
     </article>"""
     return card_html, {"id": chart_id, **chart}
 
@@ -557,10 +568,10 @@ def render_html(country, results, out_dir):
         new Chart(document.getElementById('{c["id"]}'), {{
           type: '{cfg_type}',
           data: {{
-            labels: {json.dumps(c["labels"])},
+            labels: {_safe_json(c["labels"])},
             datasets: [{{
-              label: {json.dumps(c["value_label"])},
-              data: {json.dumps(c["values"])},
+              label: {_safe_json(c["value_label"])},
+              data: {_safe_json(c["values"])},
               borderColor: '#1F6F5C',
               backgroundColor: {'rgba(31,111,92,0.12)' if cfg_type == 'line' else "'#C98A3D'"},
               fill: {str(cfg_type == 'line').lower()},
@@ -571,6 +582,7 @@ def render_html(country, results, out_dir):
           }},
           options: {{
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {{ legend: {{ display: false }} }},
             scales: {{
               x: {{ grid: {{ display: false }}, ticks: {{ font: {{ family: 'IBM Plex Mono', size: 10 }} }} }},
@@ -675,6 +687,7 @@ def render_html(country, results, out_dir):
   .small {{ font-size: 11px; margin-top: 10px; }}
 
   #ssd-map {{ height: 420px; border-radius: 6px; z-index: 1; }}
+  .chart-wrap {{ position: relative; height: 220px; }}
   .map-legend {{
     display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11px; color: var(--muted);
   }}
