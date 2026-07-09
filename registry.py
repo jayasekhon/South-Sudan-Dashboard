@@ -9,11 +9,11 @@ or "funding" (money panels).
 from datetime import date
 from connectors import reliefweb, ifrc_go, hdx, fts, cerf, cbpf
 
-# CERF and FTS only support fetching one year at a time, so rather than
-# pulling everything and relying on generate_dashboard.py's generic
-# recency filter to discard the rest, we ask them for just 2026-to-now
-# directly. Keep this in sync with DATA_START_DATE in generate_dashboard.py.
-_YEARS = list(range(2026, date.today().year + 1))
+# CERF and FTS only support fetching one year at a time. FTS in particular
+# is voluntarily/manually reported and often lags — 2026-only can come back
+# empty this early in the year, so we pull 2025 onward for a better chance
+# of real data while staying reasonably current.
+_YEARS = list(range(2025, date.today().year + 1))
 
 INDICATORS = {
     "humanitarian_updates": {
@@ -73,9 +73,6 @@ INDICATORS = {
         "label": "Conflict trend (aggregate)",
         "source": "HDX / ACLED",
         "category": "chart",
-        "skip_date_filter": True,  # TEMPORARY: unblocking to inspect real column structure;
-                                    # the Month+Year combiner fix in filter_recent should handle
-                                    # this once confirmed — see chat for details
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-acled"),
     },
     "funding_fts": {
