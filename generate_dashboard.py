@@ -144,7 +144,8 @@ def fetch_all(country, iso3, indicator_keys):
         try:
             data = fetch_indicator(key, country, iso3)
             raw_count = len(data) if hasattr(data, "__len__") else None
-            data = filter_recent(data)
+            if not meta.get("skip_date_filter"):
+                data = filter_recent(data)
             results[key] = {**meta, "status": "ok", "data": data}
             n = len(data) if hasattr(data, "__len__") else "?"
             if raw_count is not None and raw_count != n:
@@ -311,8 +312,19 @@ def fetch_boundaries():
         return None
 
 
+def normalize_admin_name(name):
+    """Normalize a state/admin name for matching across sources that may
+    format it differently — e.g. IPC data saying "Jonglei" while boundary
+    files say "Jonglei State". Lowercases, trims, collapses whitespace, and
+    strips common trailing admin-unit words."""
+    s = str(name).strip().lower()
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"\s+(state|county|province|region|governorate)$", "", s)
+    return s.strip()
+
+
 def build_state_values(data, value_hints, agg="max"):
-    """Build {state_name_lowercased: value} from a list-of-dict dataset,
+    """Build {normalized_state_name: value} from a list-of-dict dataset,
     auto-detecting the admin/state column and a numeric value column
     matching value_hints. Returns {} if nothing usable is found, in which
     case the map falls back to showing boundaries with no shading."""
@@ -333,7 +345,7 @@ def build_state_values(data, value_hints, agg="max"):
             val = float(raw_val)
         except (TypeError, ValueError):
             continue
-        key = str(name).strip().lower()
+        key = normalize_admin_name(name)
         result[key] = max(result.get(key, val), val) if agg == "max" else result.get(key, 0) + val
     return result
 
@@ -354,6 +366,20 @@ def render_map_section(boundaries, ipc_data):
     name_prop = _find_key(sample_props, ADMIN_NAME_PROP_HINTS) or _find_key(sample_props, ["name"])
     if not name_prop and sample_props:
         name_prop = next((k for k, v in sample_props.items() if isinstance(v, str)), None)
+
+    # Diagnostics — printed to the workflow log so a name-matching problem
+    # is visible without another screenshot round-trip.
+    boundary_names = set()
+    if name_prop:
+        for feat in boundaries.get("features", []):
+            v = feat.get("properties", {}).get(name_prop)
+            if v:
+                boundary_names.add(normalize_admin_name(v))
+    matched = boundary_names & set(state_values.keys())
+    print(f"  -> Map: name_prop='{name_prop}', sample boundary properties: {sample_props}")
+    print(f"  -> Map: {len(state_values)} IPC states found: {sorted(state_values.keys())}")
+    print(f"  -> Map: {len(boundary_names)} boundary names found: {sorted(boundary_names)}")
+    print(f"  -> Map: {len(matched)} names matched between them: {sorted(matched)}")
 
     card_html = """
     <article class="card card--map">
@@ -391,24 +417,31 @@ def build_map_init_js(map_config):
         "var stateValues = " + values_json + ";\n"
         "var nameProp = " + name_prop_json + ";\n"
         "var ipcColors = {1:'#3A7D44',2:'#C9A227',3:'#D9822B',4:'#B23A2E',5:'#6B1414'};\n"
+        "function normName(s) {\n"
+        "  return (s || '').toString().trim().toLowerCase()\n"
+        "    .replace(/\\s+/g, ' ')\n"
+        "    .replace(/\\s+(state|county|province|region|governorate)$/, '');\n"
+        "}\n"
         "function styleFeature(feature) {\n"
-        "  var name = (feature.properties[nameProp] || '').toString().trim().toLowerCase();\n"
+        "  var name = normName(feature.properties[nameProp]);\n"
         "  var val = stateValues[name];\n"
         "  var color = val ? (ipcColors[Math.round(val)] || '#CBD1C6') : '#CBD1C6';\n"
         "  return { fillColor: color, weight: 1, color: '#ffffff', fillOpacity: 0.85 };\n"
         "}\n"
         "if (nameProp) {\n"
-        "  L.geoJSON(geojsonData, {\n"
+        "  var layer = L.geoJSON(geojsonData, {\n"
         "    style: styleFeature,\n"
         "    onEachFeature: function(feature, layer) {\n"
-        "      var name = feature.properties[nameProp] || 'Unknown';\n"
-        "      var key = (name || '').toString().trim().toLowerCase();\n"
+        "      var rawName = feature.properties[nameProp] || 'Unknown';\n"
+        "      var key = normName(rawName);\n"
         "      var val = stateValues[key];\n"
-        "      layer.bindTooltip(name + (val ? (' \\u2014 IPC Phase ' + val) : ' \\u2014 no data'));\n"
+        "      layer.bindTooltip(rawName + (val ? (' \\u2014 IPC Phase ' + val) : ' \\u2014 no data'));\n"
         "    }\n"
         "  }).addTo(leafletMap);\n"
+        "  leafletMap.fitBounds(layer.getBounds(), { padding: [10, 10] });\n"
         "} else {\n"
-        "  L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(leafletMap);\n"
+        "  var layer = L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(leafletMap);\n"
+        "  leafletMap.fitBounds(layer.getBounds(), { padding: [10, 10] });\n"
         "}\n"
     )
 
@@ -460,6 +493,27 @@ def render_chart_card(key, res, chart_id):
           <header><h2>{label}</h2><span class="tag">{source}</span></header>
           <p class="muted">Could not fetch this — {res['error']}</p>
         </article>""", None
+
+    # IPC data has multiple numeric columns (phase, population, etc.) and a
+    # "period" field that generic auto-detection can mistake for a date
+    # column — producing a nonsensical chart. We already know exactly what
+    # this indicator should show (phase by state), so build it directly
+    # using the same logic the map uses, rather than guessing.
+    if key == "food_security_ipc":
+        state_values = build_state_values(res["data"], ["phase"], agg="max")
+        if state_values:
+            chart = {
+                "type": "bar",
+                "labels": [name.title() for name in state_values.keys()],
+                "values": list(state_values.values()),
+                "value_label": "IPC phase",
+            }
+            card_html = f"""
+            <article class="card">
+              <header><h2>{label}</h2><span class="tag">{source}</span></header>
+              <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
+            </article>"""
+            return card_html, {"id": chart_id, **chart}
 
     df = _to_dataframe(res["data"])
     chart = detect_chart(df)
