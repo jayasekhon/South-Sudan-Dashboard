@@ -143,6 +143,11 @@
           <span class="kpi-label">Highest IPC phase</span>
         </div>
         <div class="kpi">
+          <span class="kpi-dot kpi-dot--warn"></span>
+          <span class="kpi-value">168,457,062</span>
+          <span class="kpi-label">Displaced (latest)</span>
+        </div>
+        <div class="kpi">
           <span class="kpi-dot kpi-dot--neutral"></span>
           <span class="kpi-value">0</span>
           <span class="kpi-label">Active emergencies</span>
@@ -168,65 +173,65 @@
 
     <section id="situation">
       <div class="section-label">Situation feed</div>
-      <div class="grid grid--narrow"></div>
+      <div class="grid grid--narrow">
+        <article class="card card--error">
+          <header><h2>Humanitarian situation reports</h2><span class="tag">ReliefWeb</span></header>
+          <p class="muted">Could not fetch this — 403 Client Error: Forbidden for url: https://api.reliefweb.int/v2/reports?appname=OCHA-Example-Appname-kefjh43qw</p>
+        </article>
+        <article class="card">
+          <header><h2>Active emergencies</h2><span class="tag">IFRC GO</span></header>
+          <p class="muted">No records returned.</p>
+        </article>
+        <article class="card">
+          <header><h2>Appeals</h2><span class="tag">IFRC GO</span></header>
+          <p class="muted">No records returned.</p>
+        </article>
+        <article class="card">
+          <header><h2>Field reports</h2><span class="tag">IFRC GO</span></header>
+          <p class="muted">No records returned.</p>
+        </article></div>
     </section>
 
     <section id="indicators">
       <div class="section-label">Indicators</div>
       <div class="grid">
-        <article class="card card--error">
-          <header><h2>Humanitarian situation reports (ReliefWeb)</h2><span class="tag">reliefweb</span></header>
-          <p class="muted">Could not fetch this — 403 Client Error: Forbidden for url: https://api.reliefweb.int/v2/reports?appname=OCHA-Example-Appname-kefjh43qw</p>
-        </article>
-        <article class="card">
-          <header><h2>Active emergencies (IFRC GO)</h2><span class="tag">ifrc_go</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
-        <article class="card">
-          <header><h2>Appeals (IFRC GO)</h2><span class="tag">ifrc_go</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
-        <article class="card">
-          <header><h2>Field reports (IFRC GO)</h2><span class="tag">ifrc_go</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
     <article class="card">
-      <header><h2>Food security / IPC (HDX)</h2><span class="tag">hdx</span></header>
-      <div class="chart-wrap"><canvas id="chart_5"></canvas></div>
+      <header><h2>Food security (IPC phase, by state)</h2><span class="tag">HDX</span></header>
+      <div class="chart-wrap"><canvas id="chart_1"></canvas></div>
     </article>
     <article class="card">
-      <header><h2>Rainfall anomaly / CHIRPS (HDX)</h2><span class="tag">hdx</span></header>
-      <div class="chart-wrap"><canvas id="chart_6"></canvas></div>
+      <header><h2>Rainfall anomaly</h2><span class="tag">HDX / CHIRPS</span></header>
+      <div class="chart-wrap"><canvas id="chart_2"></canvas></div>
     </article>
-        <article class="card">
-          <header><h2>Displacement / IOM DTM (HDX)</h2><span class="tag">hdx</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
     <article class="card">
-      <header><h2>Food prices / WFP VAM (HDX)</h2><span class="tag">hdx</span></header>
-      <div class="chart-wrap"><canvas id="chart_8"></canvas></div>
+      <header><h2>Displacement</h2><span class="tag">HDX / IOM DTM</span></header>
+      <div class="chart-wrap"><canvas id="chart_3"></canvas></div>
+    </article>
+    <article class="card">
+      <header><h2>Food prices</h2><span class="tag">HDX / WFP VAM</span></header>
+      <div class="chart-wrap"><canvas id="chart_4"></canvas></div>
     </article>
         <article class="card">
-          <header><h2>Conflict trend, aggregate / ACLED via HDX (charts only)</h2><span class="tag">hdx</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
-        <article class="card">
-          <header><h2>Humanitarian funding flows (FTS)</h2><span class="tag">fts</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
-        <article class="card">
-          <header><h2>CERF allocations</h2><span class="tag">cerf</span></header>
-          <p class="muted">No records returned.</p>
-        </article>
-        <article class="card">
-          <header><h2>Country-Based Pooled Fund / SSHF projects (CBPF)</h2><span class="tag">cbpf</span></header>
+          <header><h2>Conflict trend (aggregate)</h2><span class="tag">HDX / ACLED</span></header>
           <p class="muted">No records returned.</p>
         </article></div>
     </section>
 
     <section id="funding">
       <div class="section-label">Funding</div>
-      <div class="grid"></div>
+      <div class="grid">
+        <article class="card card--error">
+          <header><h2>Funding flows by cluster</h2><span class="tag">FTS</span></header>
+          <p class="muted">Could not fetch this — fetch() got an unexpected keyword argument 'years'</p>
+        </article>
+        <article class="card card--error">
+          <header><h2>CERF allocations</h2><span class="tag">CERF</span></header>
+          <p class="muted">Could not fetch this — fetch() got an unexpected keyword argument 'years'</p>
+        </article>
+        <article class="card">
+          <header><h2>SSHF (Country-Based Pooled Fund) projects</h2><span class="tag">CBPF</span></header>
+          <p class="muted">No records returned.</p>
+        </article></div>
     </section>
   </main>
 
@@ -238,7 +243,7 @@
   <script>
     Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
     
-        new Chart(document.getElementById('chart_5'), {
+        new Chart(document.getElementById('chart_1'), {
           type: 'line',
           data: {
             labels: ["Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026", "Mar 2026"],
@@ -263,7 +268,7 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_6'), {
+        new Chart(document.getElementById('chart_2'), {
           type: 'line',
           data: {
             labels: ["2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00", "2026-07-01T00:00:00"],
@@ -288,7 +293,32 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_8'), {
+        new Chart(document.getElementById('chart_3'), {
+          type: 'line',
+          data: {
+            labels: ["2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00", "2025-02-28T00:00:00"],
+            datasets: [{
+              label: "id",
+              data: [134314.0, 134136.0, 134091.0, 133419.0, 150848.0, 145130.0, 143783.0, 141062.0, 141084.0, 140991.0, 140927.0, 140964.0, 146535.0, 146546.0, 146578.0, 146646.0, 146653.0, 148044.0, 148053.0, 142440.0, 141111.0, 143840.0, 140494.0, 86838.0],
+              borderColor: '#1F6F5C',
+              backgroundColor: "rgba(31,111,92,0.12)",
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2,
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
+              y: { grid: { color: '#E1E5DC' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } }
+            }
+          }
+        });
+        new Chart(document.getElementById('chart_4'), {
           type: 'line',
           data: {
             labels: ["2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15", "2026-05-15"],
@@ -322,24 +352,31 @@ var geojsonData = {"type": "FeatureCollection", "name": "ssd_adminlines", "crs":
 var stateValues = {};
 var nameProp = "name";
 var ipcColors = {1:'#3A7D44',2:'#C9A227',3:'#D9822B',4:'#B23A2E',5:'#6B1414'};
+function normName(s) {
+  return (s || '').toString().trim().toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/\s+(state|county|province|region|governorate)$/, '');
+}
 function styleFeature(feature) {
-  var name = (feature.properties[nameProp] || '').toString().trim().toLowerCase();
+  var name = normName(feature.properties[nameProp]);
   var val = stateValues[name];
   var color = val ? (ipcColors[Math.round(val)] || '#CBD1C6') : '#CBD1C6';
   return { fillColor: color, weight: 1, color: '#ffffff', fillOpacity: 0.85 };
 }
 if (nameProp) {
-  L.geoJSON(geojsonData, {
+  var layer = L.geoJSON(geojsonData, {
     style: styleFeature,
     onEachFeature: function(feature, layer) {
-      var name = feature.properties[nameProp] || 'Unknown';
-      var key = (name || '').toString().trim().toLowerCase();
+      var rawName = feature.properties[nameProp] || 'Unknown';
+      var key = normName(rawName);
       var val = stateValues[key];
-      layer.bindTooltip(name + (val ? (' \u2014 IPC Phase ' + val) : ' \u2014 no data'));
+      layer.bindTooltip(rawName + (val ? (' \u2014 IPC Phase ' + val) : ' \u2014 no data'));
     }
   }).addTo(leafletMap);
+  leafletMap.fitBounds(layer.getBounds(), { padding: [10, 10] });
 } else {
-  L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(leafletMap);
+  var layer = L.geoJSON(geojsonData, { style: { fillColor: '#CBD1C6', weight: 1, color: '#fff', fillOpacity: 0.85 } }).addTo(leafletMap);
+  leafletMap.fitBounds(layer.getBounds(), { padding: [10, 10] });
 }
 
   </script>
