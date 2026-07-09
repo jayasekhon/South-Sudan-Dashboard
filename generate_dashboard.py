@@ -850,6 +850,9 @@ def main():
     parser.add_argument("--indicators", help="Comma-separated indicator keys, or 'all'")
     parser.add_argument("--output-html", help="Also copy the rendered dashboard to this exact path "
                                                 "(e.g. docs/index.html) — used for CI/GitHub Pages publishing.")
+    parser.add_argument("--output-csv-dir", help="Also copy every indicator's raw CSV into this exact "
+                                                   "folder (e.g. data/) — overwrites each run, so you (or I) "
+                                                   "can inspect real data directly from a stable GitHub link.")
     args = parser.parse_args()
 
     if args.country and args.iso3 and args.indicators:
@@ -876,6 +879,15 @@ def main():
         os.makedirs(os.path.dirname(args.output_html) or ".", exist_ok=True)
         shutil.copy(html_path, args.output_html)
         print(f"Also copied to: {args.output_html}")
+
+    if args.output_csv_dir:
+        import shutil
+        import glob
+        os.makedirs(args.output_csv_dir, exist_ok=True)
+        for csv_path in glob.glob(os.path.join(out_dir, "*.csv")):
+            dest = os.path.join(args.output_csv_dir, os.path.basename(csv_path))
+            shutil.copy(csv_path, dest)
+        print(f"Also copied CSVs to: {args.output_csv_dir}")
 
     print(f"\nDone. Dashboard: {html_path}")
 
