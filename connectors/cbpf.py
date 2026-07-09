@@ -2,11 +2,7 @@
 CBPF connector
 Docs: https://cbpfapi.unocha.org/vo3/
 
-Uses vo3's GlobalGenericDataExtract(PF_PROJ_SUMMARY) — the same endpoint
-documented in the CBPF_Setup_Guide Power Automate flow — rather than vo2's
-ExtendedAllocationDetails, which turned out to be a fixed COVID-19-era
-historical snapshot (confirmed via its HDX listing title: "CERF and CBPF
-COVID-19 Allocations") that will never have current data.
+Uses vo3's GlobalGenericDataExtract(PF_PROJ_SUMMARY).
 
 PF_PROJ_SUMMARY has no direct Country column, only a numeric PooledFundId
 with no public lookup table — but project codes (ChfProjectCode) are
