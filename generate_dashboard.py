@@ -98,15 +98,23 @@ def filter_recent(data, start=DATA_START_DATE, end=None):
         return data  # nothing to filter on — treat as current/snapshot data
 
     kept = []
+    unparseable_samples = []
     for row in data:
         raw = row.get(date_col)
         if raw in (None, ""):
             continue
         parsed = pd.to_datetime(raw, errors="coerce")
         if pd.isna(parsed):
+            if len(unparseable_samples) < 3:
+                unparseable_samples.append(raw)
             continue
         if start <= parsed.date() <= end:
             kept.append(row)
+
+    if not kept and data:
+        print(f"  -> filter_recent: date_col='{date_col}' found but 0/{len(data)} rows survived "
+              f"the {start}\u2013{end} window. Sample raw values that failed to parse or were "
+              f"out of range: {unparseable_samples or [r.get(date_col) for r in data[:3]]}")
     return kept
 
 
@@ -210,11 +218,15 @@ def detect_chart(df, max_points=24):
         value_col = numeric_cols[0]
         sub = df[[date_col, value_col]].copy()
         sub[value_col] = pd.to_numeric(sub[value_col], errors="coerce")
+        sub[date_col] = pd.to_datetime(sub[date_col], errors="coerce")
         sub = sub.dropna().sort_values(date_col).tail(max_points)
         if not sub.empty:
+            # Clean date labels — no time-of-day component, which is
+            # meaningless noise for monthly/dekadal/annual data.
+            labels = sub[date_col].dt.strftime("%Y-%m-%d").tolist()
             return {
                 "type": "line",
-                "labels": sub[date_col].astype(str).tolist(),
+                "labels": labels,
                 "values": sub[value_col].round(2).tolist(),
                 "value_label": value_col,
             }
@@ -295,7 +307,7 @@ def compute_kpis(results):
 # ---------------------------------------------------------------------------
 
 BOUNDARY_RESOURCE_ID = "487db73a-fe01-41a3-a748-c83e639f34ac"  # ssd_admin_boundaries.geojson.zip
-ADMIN_COL_HINTS = ["admin1", "state", "region", "adm1"]
+ADMIN_COL_HINTS = ["admin1", "state", "region", "adm1", "level1", "level 1", "area", "province"]
 ADMIN_NAME_PROP_HINTS = ["admin1name", "adm1en", "adm1name", "statename"]
 IPC_COLORS = {1: "#3A7D44", 2: "#C9A227", 3: "#D9822B", 4: "#B23A2E", 5: "#6B1414"}
 
@@ -334,6 +346,9 @@ def build_state_values(data, value_hints, agg="max"):
     admin_col = _find_key(data[0], ADMIN_COL_HINTS)
     value_col = _find_key(data[0], value_hints)
     if not admin_col or not value_col:
+        print(f"  -> build_state_values: couldn't find admin_col (got {admin_col!r}) "
+              f"or value_col matching {value_hints} (got {value_col!r}). "
+              f"Available columns: {list(data[0].keys())}")
         return {}
 
     result = {}
@@ -426,7 +441,7 @@ def build_map_init_js(map_config):
         "  var name = normName(feature.properties[nameProp]);\n"
         "  var val = stateValues[name];\n"
         "  var color = val ? (ipcColors[Math.round(val)] || '#CBD1C6') : '#CBD1C6';\n"
-        "  return { fillColor: color, weight: 1, color: '#ffffff', fillOpacity: 0.85 };\n"
+        "  return { fillColor: color, weight: 1.5, color: '#3A4440', opacity: 0.8, fillOpacity: 0.8 };\n"
         "}\n"
         "if (nameProp) {\n"
         "  var layer = L.geoJSON(geojsonData, {\n"
