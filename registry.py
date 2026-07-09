@@ -1,68 +1,95 @@
 """
 Indicator registry — maps what a user picks in the dashboard builder to the
 connector call(s) needed to fetch it, for the South Sudan dashboard.
+
+Each indicator also carries a "category" used purely for layout grouping in
+render_html(): "narrative" (feed of items), "chart" (time series/breakdown),
+or "funding" (money panels).
 """
+from datetime import date
 from connectors import reliefweb, ifrc_go, hdx, fts, cerf, cbpf
+
+# CERF and FTS only support fetching one year at a time, so rather than
+# pulling everything and relying on generate_dashboard.py's generic
+# recency filter to discard the rest, we ask them for just 2026-to-now
+# directly. Keep this in sync with DATA_START_DATE in generate_dashboard.py.
+_YEARS = list(range(2026, date.today().year + 1))
 
 INDICATORS = {
     "humanitarian_updates": {
-        "label": "Humanitarian situation reports (ReliefWeb)",
-        "source": "reliefweb",
+        "label": "Humanitarian situation reports",
+        "source": "ReliefWeb",
+        "category": "narrative",
         "fetch": lambda country, iso3: reliefweb.fetch(country=country),
     },
     "emergencies": {
-        "label": "Active emergencies (IFRC GO)",
-        "source": "ifrc_go",
+        "label": "Active emergencies",
+        "source": "IFRC GO",
+        "category": "narrative",
+        "skip_date_filter": True,  # represents *current* status, not a dated event feed
         "fetch": lambda country, iso3: ifrc_go.fetch("emergencies", country_iso3=iso3),
     },
     "appeals": {
-        "label": "Appeals (IFRC GO)",
-        "source": "ifrc_go",
+        "label": "Appeals",
+        "source": "IFRC GO",
+        "category": "narrative",
+        "skip_date_filter": True,  # represents *current* status, not a dated event feed
         "fetch": lambda country, iso3: ifrc_go.fetch("appeals", country_iso3=iso3),
     },
     "field_reports": {
-        "label": "Field reports (IFRC GO)",
-        "source": "ifrc_go",
+        "label": "Field reports",
+        "source": "IFRC GO",
+        "category": "narrative",
         "fetch": lambda country, iso3: ifrc_go.fetch("field_reports", country_iso3=iso3),
     },
     "food_security_ipc": {
-        "label": "Food security / IPC (HDX)",
-        "source": "hdx",
+        "label": "Food security (IPC phase, by state)",
+        "source": "HDX",
+        "category": "chart",
+        "skip_date_filter": True,  # this HDX resource is a "latest" snapshot, not a time series
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-ipc"),
     },
     "rainfall_chirps": {
-        "label": "Rainfall anomaly / CHIRPS (HDX)",
-        "source": "hdx",
+        "label": "Rainfall anomaly",
+        "source": "HDX / CHIRPS",
+        "category": "chart",
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-chirps"),
     },
     "displacement_dtm": {
-        "label": "Displacement / IOM DTM (HDX)",
-        "source": "hdx",
+        "label": "Displacement",
+        "source": "HDX / IOM DTM",
+        "category": "chart",
+        "skip_date_filter": True,  # DTM rounds are infrequent; the latest round should always show
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-dtm"),
     },
     "food_prices_vam": {
-        "label": "Food prices / WFP VAM (HDX)",
-        "source": "hdx",
+        "label": "Food prices",
+        "source": "HDX / WFP VAM",
+        "category": "chart",
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-vam"),
     },
     "conflict_acled": {
-        "label": "Conflict trend, aggregate / ACLED via HDX (charts only)",
-        "source": "hdx",
+        "label": "Conflict trend (aggregate)",
+        "source": "HDX / ACLED",
+        "category": "chart",
         "fetch": lambda country, iso3: hdx.fetch(f"{iso3.lower()}-acled"),
     },
     "funding_fts": {
-        "label": "Humanitarian funding flows (FTS)",
-        "source": "fts",
-        "fetch": lambda country, iso3: fts.fetch(country_iso3=iso3, groupby="cluster"),
+        "label": "Funding flows by cluster",
+        "source": "FTS",
+        "category": "funding",
+        "fetch": lambda country, iso3: fts.fetch(country_iso3=iso3, years=_YEARS, groupby="cluster"),
     },
     "funding_cerf": {
         "label": "CERF allocations",
-        "source": "cerf",
-        "fetch": lambda country, iso3: cerf.fetch(country_name=country, year=2026),
+        "source": "CERF",
+        "category": "funding",
+        "fetch": lambda country, iso3: cerf.fetch(country_name=country, years=_YEARS),
     },
     "funding_cbpf": {
-        "label": "Country-Based Pooled Fund / SSHF projects (CBPF)",
-        "source": "cbpf",
+        "label": "SSHF (Country-Based Pooled Fund) projects",
+        "source": "CBPF",
+        "category": "funding",
         "fetch": lambda country, iso3: cbpf.fetch(country_name=country),
     },
 }
