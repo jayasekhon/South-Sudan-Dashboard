@@ -427,6 +427,29 @@ def extract_grouped_trend(data, level_col, level_value, date_col, value_col, agg
     return series
 
 
+def extract_acled_trend(data, value_col="Fatalities"):
+    """
+    ACLED-derived conflict data has one row per (Month, Year, county) —
+    separate Month/Year text+int columns, not a combined date, and many
+    rows per period (one per admin2 county). Combine Month+Year into a
+    real date and sum across counties for a genuine national trend.
+    """
+    df = _to_dataframe(data)
+    if df.empty or "Month" not in df.columns or "Year" not in df.columns or value_col not in df.columns:
+        return None
+
+    df = df.copy()
+    df["_date"] = pd.to_datetime(
+        df["Month"].astype(str) + " " + df["Year"].astype(str), errors="coerce", format="mixed"
+    )
+    df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
+    df = df.dropna(subset=["_date", value_col])
+    if df.empty:
+        return None
+
+    return df.groupby("_date")[value_col].sum().sort_index()
+
+
 def extract_vam_price_trend(data, commodity_filter="Maize"):
     """
     VAM food price data has many rows per date (one per market x
@@ -596,6 +619,73 @@ def build_map_init_js(map_config):
 # Rendering
 # ---------------------------------------------------------------------------
 
+def render_expandable_feed_card(key, res, max_items=15):
+    """
+    For sources that are really a list of individual records (projects,
+    allocations) rather than a clean time series — a chart doesn't make
+    sense, but a clickable list with full detail on expand does. Uses a
+    native <details>/<summary> disclosure, so it needs no JS.
+    Field names are guessed generically since exact columns vary by source.
+    """
+    label = res.get("label", key)
+    source = res.get("source", "")
+    if res["status"] == "error":
+        return f"""
+        <article class="card card--error">
+          <header><h2>{label}</h2><span class="tag">{source}</span></header>
+          <p class="muted">Could not fetch this — {res['error']}</p>
+        </article>"""
+
+    data = res["data"]
+    if isinstance(data, dict):
+        data = data.get("flows") or data.get("data") or []
+    if not data:
+        return f"""
+        <article class="card">
+          <header><h2>{label}</h2><span class="tag">{source}</span></header>
+          <p class="muted">No records returned.</p>
+        </article>"""
+
+    title_keys = ["title", "Title", "ProjectTitle", "projectTitle", "name", "Name", "OrgName", "agency", "Agency"]
+    date_keys = ["date", "Date", "DateOfAlloc", "year", "Year", "AllocationDate"]
+    amount_keys = ["amount", "Amount", "amountUSD", "budget", "Budget", "TargetAmt"]
+
+    items_html = ""
+    for item in list(data)[:max_items]:
+        title = next((item[k] for k in title_keys if item.get(k) not in (None, "")), "Untitled")
+        date_val = next((item[k] for k in date_keys if item.get(k) not in (None, "")), "")
+        amount = next((item[k] for k in amount_keys if item.get(k) not in (None, "")), None)
+
+        summary = f"{str(date_val)[:10]} — {title}" if date_val else str(title)
+        if amount is not None:
+            try:
+                summary += f" (${float(amount):,.0f})"
+            except (TypeError, ValueError):
+                summary += f" ({amount})"
+
+        detail_rows = "".join(
+            f'<div class="detail-row"><span class="detail-key">{k}</span><span>{v}</span></div>'
+            for k, v in item.items() if v not in (None, "")
+        )
+
+        items_html += f"""
+        <details class="feed-detail">
+          <summary>{summary}</summary>
+          <div class="detail-body">{detail_rows}</div>
+        </details>"""
+
+    footer = f"{len(data)} total record(s)"
+    if len(data) > max_items:
+        footer += f" — showing first {max_items}"
+
+    return f"""
+    <article class="card">
+      <header><h2>{label}</h2><span class="tag">{source}</span></header>
+      <div class="feed-expandable">{items_html}</div>
+      <p class="muted small">{footer}</p>
+    </article>"""
+
+
 def render_narrative_card(key, res):
     label = res.get("label", key)
     source = res.get("source", "")
@@ -699,6 +789,17 @@ def render_chart_card(key, res, chart_id):
             </article>"""
             return card_html, {"id": chart_id, **chart}
 
+    if key == "conflict_acled":
+        series = extract_acled_trend(res["data"])
+        chart = series_to_chart(series, "Fatalities (national)")
+        if chart:
+            card_html = f"""
+            <article class="card">
+              <header><h2>{label}</h2><span class="tag">{source}</span></header>
+              <div class="chart-wrap"><canvas id="{chart_id}"></canvas></div>
+            </article>"""
+            return card_html, {"id": chart_id, **chart}
+
     df = _to_dataframe(res["data"])
     chart = detect_chart(df)
 
@@ -792,6 +893,10 @@ def render_html(country, results, out_dir):
         category = res.get("category", "chart")
         if category == "narrative":
             narrative_html += render_narrative_card(key, res)
+        elif key == "funding_cerf":
+            # CERF data is a list of project summaries, not a time series —
+            # a chart doesn't fit; an expandable list does.
+            funding_html += render_expandable_feed_card(key, res)
         elif category == "funding":
             chart_counter += 1
             html, chart_data = render_funding_card(key, res, f"chart_{chart_counter}")
@@ -912,6 +1017,7 @@ def render_html(country, results, out_dir):
   .section-label::after {{ content: ''; flex: 1; height: 1px; background: var(--border); }}
 
   .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }}
+  .grid--wide {{ grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); }}
   .grid--narrow {{ grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }}
 
   .card {{
@@ -937,6 +1043,24 @@ def render_html(country, results, out_dir):
   }}
   .map-legend span {{ display: flex; align-items: center; gap: 5px; }}
   .map-legend i {{ width: 10px; height: 10px; border-radius: 2px; display: inline-block; }}
+
+  .feed-expandable {{ display: flex; flex-direction: column; gap: 6px; }}
+  .feed-detail {{ border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }}
+  .feed-detail summary {{
+    cursor: pointer; font-size: 13px; list-style: none; display: flex; align-items: center;
+  }}
+  .feed-detail summary::-webkit-details-marker {{ display: none; }}
+  .feed-detail summary::before {{ content: '▸'; margin-right: 8px; color: var(--primary); font-size: 11px; }}
+  .feed-detail[open] summary::before {{ content: '▾'; }}
+  .detail-body {{
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px;
+  }}
+  .detail-row {{ font-size: 12px; display: flex; flex-direction: column; gap: 1px; }}
+  .detail-key {{
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase;
+    color: var(--muted); letter-spacing: 0.03em;
+  }}
 
   .feed {{ list-style: none; margin: 0; padding: 0; }}
   .feed li {{
@@ -990,7 +1114,7 @@ def render_html(country, results, out_dir):
 
     <section id="indicators">
       <div class="section-label">Indicators</div>
-      <div class="grid">{chart_html}</div>
+      <div class="grid grid--wide">{chart_html}</div>
     </section>
 
     <section id="funding">
