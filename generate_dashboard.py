@@ -246,12 +246,16 @@ def detect_chart(df, max_points=24):
 
     numeric_cols = [c for c in df.columns if pd.to_numeric(df[c], errors="coerce").notna().mean() > 0.6]
     date_col = _find_column(df, DATE_COL_HINTS)
+    # A column can't serve as both the date axis and the plotted value —
+    # this does happen in practice (e.g. a bare "year" column matches both
+    # the date hints and the numeric-column test).
+    value_candidates = [c for c in numeric_cols if c != date_col]
 
-    if date_col and numeric_cols:
-        value_col = numeric_cols[0]
+    if date_col and value_candidates:
+        value_col = value_candidates[0]
         sub = df[[date_col, value_col]].copy()
         sub[value_col] = pd.to_numeric(sub[value_col], errors="coerce")
-        sub[date_col] = pd.to_datetime(sub[date_col], errors="coerce")
+        sub[date_col] = sub[date_col].apply(lambda v: _parse_date_value(v))
         sub = sub.dropna().sort_values(date_col).tail(max_points)
         if not sub.empty:
             # Clean date labels — no time-of-day component, which is
@@ -670,7 +674,12 @@ def render_chart_card(key, res, chart_id):
 
     if key == "displacement_dtm":
         series = extract_grouped_trend(res["data"], "adminLevel", 0, "reportingDate", "numPresentIdpInd", agg="sum")
-        chart = series_to_chart(series, "People displaced (national)")
+        if series is not None and not series.empty:
+            # Raw values run into the millions, which get visually truncated
+            # on the Y-axis (shows as "000,000" with no leading digits) —
+            # scaling to thousands keeps labels short and readable.
+            series = (series / 1000).round(1)
+        chart = series_to_chart(series, "People displaced (thousands)")
         if chart:
             card_html = f"""
             <article class="card">
@@ -774,6 +783,12 @@ def render_html(country, results, out_dir):
     chart_counter = 0
 
     for key, res in results.items():
+        # IPC is fully covered by the map now — showing it again as a
+        # separate bar chart in Indicators is redundant. Data is still
+        # fetched/kept in `results` for the map and KPI strip to use.
+        if key == "food_security_ipc":
+            continue
+
         category = res.get("category", "chart")
         if category == "narrative":
             narrative_html += render_narrative_card(key, res)
