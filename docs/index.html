@@ -92,6 +92,7 @@
   .small { font-size: 11px; margin-top: 10px; }
 
   #ssd-map { height: 420px; border-radius: 6px; z-index: 1; }
+  .chart-wrap { position: relative; height: 220px; }
   .map-legend {
     display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11px; color: var(--muted);
   }
@@ -191,11 +192,11 @@
         </article>
     <article class="card">
       <header><h2>Food security / IPC (HDX)</h2><span class="tag">hdx</span></header>
-      <canvas id="chart_5" height="160"></canvas>
+      <div class="chart-wrap"><canvas id="chart_5"></canvas></div>
     </article>
     <article class="card">
       <header><h2>Rainfall anomaly / CHIRPS (HDX)</h2><span class="tag">hdx</span></header>
-      <canvas id="chart_6" height="160"></canvas>
+      <div class="chart-wrap"><canvas id="chart_6"></canvas></div>
     </article>
         <article class="card">
           <header><h2>Displacement / IOM DTM (HDX)</h2><span class="tag">hdx</span></header>
@@ -203,7 +204,7 @@
         </article>
     <article class="card">
       <header><h2>Food prices / WFP VAM (HDX)</h2><span class="tag">hdx</span></header>
-      <canvas id="chart_8" height="160"></canvas>
+      <div class="chart-wrap"><canvas id="chart_8"></canvas></div>
     </article>
         <article class="card">
           <header><h2>Conflict trend, aggregate / ACLED via HDX (charts only)</h2><span class="tag">hdx</span></header>
@@ -254,6 +255,7 @@
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
@@ -278,6 +280,7 @@
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
@@ -302,6 +305,7 @@
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
