@@ -198,24 +198,20 @@
       <div class="section-label">Indicators</div>
       <div class="grid">
             <article class="card">
-              <header><h2>Food security (IPC phase, by state)</h2><span class="tag">HDX</span></header>
+              <header><h2>Rainfall anomaly</h2><span class="tag">HDX / CHIRPS</span></header>
               <div class="chart-wrap"><canvas id="chart_1"></canvas></div>
             </article>
             <article class="card">
-              <header><h2>Rainfall anomaly</h2><span class="tag">HDX / CHIRPS</span></header>
+              <header><h2>Displacement</h2><span class="tag">HDX / IOM DTM</span></header>
               <div class="chart-wrap"><canvas id="chart_2"></canvas></div>
             </article>
             <article class="card">
-              <header><h2>Displacement</h2><span class="tag">HDX / IOM DTM</span></header>
-              <div class="chart-wrap"><canvas id="chart_3"></canvas></div>
-            </article>
-            <article class="card">
               <header><h2>Food prices</h2><span class="tag">HDX / WFP VAM</span></header>
-              <div class="chart-wrap"><canvas id="chart_4"></canvas></div>
+              <div class="chart-wrap"><canvas id="chart_3"></canvas></div>
             </article>
     <article class="card">
       <header><h2>Conflict trend (aggregate)</h2><span class="tag">HDX / ACLED</span></header>
-      <div class="chart-wrap"><canvas id="chart_5"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart_4"></canvas></div>
     </article></div>
     </section>
 
@@ -228,12 +224,12 @@
         </article>
     <article class="card">
       <header><h2>CERF allocations</h2><span class="tag">CERF</span></header>
-      <div class="chart-wrap"><canvas id="chart_7"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart_6"></canvas></div>
     </article>
-        <article class="card">
-          <header><h2>SSHF (Country-Based Pooled Fund) projects</h2><span class="tag">CBPF</span></header>
-          <p class="muted">No records returned.</p>
-        </article></div>
+    <article class="card">
+      <header><h2>SSHF (Country-Based Pooled Fund) projects</h2><span class="tag">CBPF</span></header>
+      <div class="chart-wrap"><canvas id="chart_7"></canvas></div>
+    </article></div>
     </section>
   </main>
 
@@ -246,31 +242,6 @@
     Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
     
         new Chart(document.getElementById('chart_1'), {
-          type: 'bar',
-          data: {
-            labels: ["Abyei", "Central Equatoria", "Eastern Equatoria", "Jonglei", "Lakes", "Northern Bahr El Ghazal", "Unity", "Upper Nile", "Warrap", "Western Bahr El Ghazal", "Western Equatoria"],
-            datasets: [{
-              label: "IPC phase",
-              data: [4, 4, 4, 5, 4, 4, 4, 5, 4, 4, 4],
-              borderColor: '#1F6F5C',
-              backgroundColor: "#C98A3D",
-              fill: false,
-              tension: 0.3,
-              borderWidth: 2,
-              borderRadius: 4,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
-              y: { grid: { color: '#E1E5DC' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } }
-            }
-          }
-        });
-        new Chart(document.getElementById('chart_2'), {
           type: 'line',
           data: {
             labels: ["2026-01-01", "2026-01-11", "2026-01-21", "2026-02-01", "2026-02-11", "2026-02-21", "2026-03-01", "2026-03-11", "2026-03-21", "2026-04-01", "2026-04-11", "2026-04-21", "2026-05-01", "2026-05-11", "2026-05-21", "2026-06-01", "2026-06-11", "2026-06-21", "2026-07-01"],
@@ -295,13 +266,13 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_3'), {
+        new Chart(document.getElementById('chart_2'), {
           type: 'line',
           data: {
             labels: ["2017-12-31", "2018-03-30", "2018-06-30", "2018-12-31", "2019-03-30", "2019-03-31", "2019-06-30", "2019-11-30", "2020-03-30", "2020-09-30", "2020-12-31", "2021-04-30", "2021-05-30", "2021-06-30", "2021-07-30", "2021-08-31", "2021-09-30", "2021-10-31", "2021-11-30", "2021-12-01", "2022-08-31", "2023-04-30", "2024-09-30", "2025-02-28"],
             datasets: [{
-              label: "People displaced (national)",
-              data: [362755, 1100550, 843234, 1749463, 1420189, 1420189, 1869314, 1665815, 1600254, 1615765, 1710966, 960634, 970201, 974956, 980548, 982804, 5020390, 990600, 992593, 4459314, 2257672, 2027331, 1844914, 1992513],
+              label: "People displaced (thousands)",
+              data: [362.8, 1100.6, 843.2, 1749.5, 1420.2, 1420.2, 1869.3, 1665.8, 1600.3, 1615.8, 1711.0, 960.6, 970.2, 975.0, 980.5, 982.8, 5020.4, 990.6, 992.6, 4459.3, 2257.7, 2027.3, 1844.9, 1992.5],
               borderColor: '#1F6F5C',
               backgroundColor: "rgba(31,111,92,0.12)",
               fill: true,
@@ -320,7 +291,7 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_4'), {
+        new Chart(document.getElementById('chart_3'), {
           type: 'line',
           data: {
             labels: ["2026-01-15", "2026-02-15", "2026-03-15", "2026-04-15", "2026-05-15"],
@@ -345,7 +316,7 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_5'), {
+        new Chart(document.getElementById('chart_4'), {
           type: 'line',
           data: {
             labels: ["1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01", "1-12-01"],
@@ -370,13 +341,38 @@
             }
           }
         });
-        new Chart(document.getElementById('chart_7'), {
+        new Chart(document.getElementById('chart_6'), {
           type: 'line',
           data: {
-            labels: ["1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01", "1970-01-01"],
+            labels: ["2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01"],
             datasets: [{
               label: "projectID",
               data: [38959, 38960, 38961, 38962, 38963, 39563, 39777, 39778, 39779, 39780, 39781],
+              borderColor: '#1F6F5C',
+              backgroundColor: "rgba(31,111,92,0.12)",
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2,
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
+              y: { grid: { color: '#E1E5DC' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } }
+            }
+          }
+        });
+        new Chart(document.getElementById('chart_7'), {
+          type: 'line',
+          data: {
+            labels: ["2019-07-12", "2019-11-19", "2020-03-25", "2020-03-25", "2020-03-25", "2020-04-28", "2020-05-09", "2020-05-27", "2020-06-25", "2020-06-25", "2020-06-25", "2020-06-25", "2020-10-28"],
+            datasets: [{
+              label: "TargetAmt",
+              data: [77643.0, 126977.0, 1000000.0, 400000.0, 184144.0, 422250.0, 5200000.0, 4999500.0, 1762583.0, 1124949.0, 1125000.0, 874999.0, 7000000.0],
               borderColor: '#1F6F5C',
               backgroundColor: "rgba(31,111,92,0.12)",
               fill: true,
