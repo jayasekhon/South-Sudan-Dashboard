@@ -22,19 +22,19 @@ INDICATORS = {
         "category": "narrative",
         "fetch": lambda country, iso3: reliefweb.fetch(country=country),
     },
-    "emergencies": {
-        "label": "Active emergencies",
-        "source": "IFRC GO",
-        "category": "narrative",
-        "skip_date_filter": True,  # represents *current* status, not a dated event feed
-        "fetch": lambda country, iso3: ifrc_go.fetch("emergencies", country_iso3=iso3),
-    },
     "appeals": {
         "label": "Appeals",
         "source": "IFRC GO",
         "category": "narrative",
         "skip_date_filter": True,  # represents *current* status, not a dated event feed
         "fetch": lambda country, iso3: ifrc_go.fetch("appeals", country_iso3=iso3),
+    },
+    "emergencies": {
+        "label": "Active emergencies",
+        "source": "IFRC GO",
+        "category": "narrative",
+        "skip_date_filter": True,  # represents *current* status, not a dated event feed
+        "fetch": lambda country, iso3: ifrc_go.fetch("emergencies", country_iso3=iso3),
     },
     "field_reports": {
         "label": "Field reports",
@@ -79,12 +79,15 @@ INDICATORS = {
         "label": "Funding flows by cluster",
         "source": "FTS",
         "category": "funding",
+        "skip_date_filter": True,  # already scoped to _YEARS at the API level — the generic
+                                    # post-filter would wrongly re-narrow to DATA_START_DATE only
         "fetch": lambda country, iso3: fts.fetch(country_iso3=iso3, years=_YEARS, groupby="cluster"),
     },
     "funding_cerf": {
         "label": "CERF allocations",
         "source": "CERF",
         "category": "funding",
+        "skip_date_filter": True,  # same reasoning — already scoped to _YEARS at the API level
         "fetch": lambda country, iso3: cerf.fetch(country_name=country, years=_YEARS),
     },
     "funding_cbpf": {
@@ -92,7 +95,7 @@ INDICATORS = {
         "source": "CBPF",
         "category": "funding",
         "skip_date_filter": True,  # latest available allocations predate 2026 — show them rather than nothing
-        "fetch": lambda country, iso3: cbpf.fetch(country_name=country),
+        "fetch": lambda country, iso3: cbpf.fetch(country_name=country, iso3=iso3),
     },
 }
 
