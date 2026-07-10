@@ -622,9 +622,9 @@ def build_map_init_js(map_config):
 def render_expandable_feed_card(key, res, max_items=15):
     """
     For sources that are really a list of individual records (projects,
-    allocations) rather than a clean time series — a chart doesn't make
-    sense, but a clickable list with full detail on expand does. Uses a
-    native <details>/<summary> disclosure, so it needs no JS.
+    allocations, flows) rather than a clean time series — a chart doesn't
+    make sense. Each item is a clickable row that opens a modal (native
+    <dialog>) with the full record detail and a close (×) button.
     Field names are guessed generically since exact columns vary by source.
     """
     label = res.get("label", key)
@@ -646,12 +646,14 @@ def render_expandable_feed_card(key, res, max_items=15):
           <p class="muted">No records returned.</p>
         </article>"""
 
-    title_keys = ["title", "Title", "ProjectTitle", "projectTitle", "name", "Name", "OrgName", "agency", "Agency"]
+    title_keys = ["title", "Title", "ProjectTitle", "projectTitle", "name", "Name", "OrgName", "agency", "Agency",
+                  "description", "Description"]
     date_keys = ["date", "Date", "DateOfAlloc", "year", "Year", "AllocationDate"]
     amount_keys = ["amount", "Amount", "amountUSD", "budget", "Budget", "TargetAmt"]
 
     items_html = ""
-    for item in list(data)[:max_items]:
+    for i, item in enumerate(list(data)[:max_items]):
+        item_id = f"{key}-{i}"
         title = next((item[k] for k in title_keys if item.get(k) not in (None, "")), "Untitled")
         date_val = next((item[k] for k in date_keys if item.get(k) not in (None, "")), "")
         amount = next((item[k] for k in amount_keys if item.get(k) not in (None, "")), None)
@@ -669,10 +671,17 @@ def render_expandable_feed_card(key, res, max_items=15):
         )
 
         items_html += f"""
-        <details class="feed-detail">
-          <summary>{summary}</summary>
+        <button type="button" class="feed-item" onclick="document.getElementById('modal-{item_id}').showModal()">
+          {summary}
+        </button>
+        <dialog id="modal-{item_id}" class="feed-modal">
+          <div class="feed-modal-header">
+            <h3>{title}</h3>
+            <button type="button" class="feed-modal-close"
+                    onclick="document.getElementById('modal-{item_id}').close()" aria-label="Close">&times;</button>
+          </div>
           <div class="detail-body">{detail_rows}</div>
-        </details>"""
+        </dialog>"""
 
     footer = f"{len(data)} total record(s)"
     if len(data) > max_items:
@@ -1045,18 +1054,33 @@ def render_html(country, results, out_dir):
   .map-legend i {{ width: 10px; height: 10px; border-radius: 2px; display: inline-block; }}
 
   .feed-expandable {{ display: flex; flex-direction: column; gap: 6px; }}
-  .feed-detail {{ border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }}
-  .feed-detail summary {{
-    cursor: pointer; font-size: 13px; list-style: none; display: flex; align-items: center;
+  .feed-item {{
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; text-align: left;
+    background: var(--paper); cursor: pointer; width: 100%;
   }}
-  .feed-detail summary::-webkit-details-marker {{ display: none; }}
-  .feed-detail summary::before {{ content: '▸'; margin-right: 8px; color: var(--primary); font-size: 11px; }}
-  .feed-detail[open] summary::before {{ content: '▾'; }}
-  .detail-body {{
-    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px;
+  .feed-item:hover {{ border-color: var(--primary); background: var(--primary-soft); }}
+
+  .feed-modal {{
+    border: none; border-radius: 10px; padding: 0; max-width: 560px; width: 90vw;
+    box-shadow: 0 12px 32px rgba(27,35,32,0.18);
   }}
-  .detail-row {{ font-size: 12px; display: flex; flex-direction: column; gap: 1px; }}
+  .feed-modal::backdrop {{ background: rgba(27,35,32,0.45); }}
+  .feed-modal-header {{
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }}
+  .feed-modal-header h3 {{ font-family: 'Roboto Slab', serif; font-size: 16px; margin: 0; padding-right: 12px; }}
+  .feed-modal-close {{
+    border: none; background: none; font-size: 22px; line-height: 1; cursor: pointer;
+    color: var(--muted); padding: 4px 8px; border-radius: 4px; flex-shrink: 0;
+  }}
+  .feed-modal-close:hover {{ background: var(--primary-soft); color: var(--primary); }}
+  .feed-modal .detail-body {{
+    padding: 16px 20px 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 16px;
+  }}
+  .detail-row {{ font-size: 12px; display: flex; flex-direction: column; gap: 1px; word-break: break-word; }}
   .detail-key {{
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase;
     color: var(--muted); letter-spacing: 0.03em;
@@ -1130,6 +1154,11 @@ def render_html(country, results, out_dir):
 
   <script>
     Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+    document.querySelectorAll('.feed-modal').forEach(function(dlg) {{
+      dlg.addEventListener('click', function(e) {{
+        if (e.target === dlg) dlg.close();  // click on backdrop closes it
+      }});
+    }});
     {chart_init_js}
     {map_init_js}
   </script>
