@@ -893,9 +893,9 @@ def render_html(country, results, out_dir):
         category = res.get("category", "chart")
         if category == "narrative":
             narrative_html += render_narrative_card(key, res)
-        elif key in ("funding_cerf", "funding_cbpf"):
-            # Both are lists of individual project/allocation records, not
-            # time series — a chart doesn't fit; an expandable list does.
+        elif key in ("funding_cerf", "funding_cbpf", "funding_fts"):
+            # These are lists of individual project/allocation/flow records,
+            # not time series — a chart doesn't fit; an expandable list does.
             funding_html += render_expandable_feed_card(key, res)
         elif category == "funding":
             chart_counter += 1
