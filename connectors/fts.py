@@ -18,7 +18,17 @@ def _fetch_year(country_iso3: str, year: int, groupby: str = None):
 
     resp = requests.get(BASE_URL, params=params, timeout=30)
     resp.raise_for_status()
-    return resp.json().get("data", {})
+    body = resp.json()
+    data = body.get("data", {})
+    flows = data.get("flows", []) if isinstance(data, dict) else []
+
+    incoming = data.get("incoming", {}) if isinstance(data, dict) else {}
+    print(f"  -> FTS {year}: status={body.get('status')}, "
+          f"incoming.flowCount={incoming.get('flowCount')}, "
+          f"incoming.fundingTotal={incoming.get('fundingTotal')}, "
+          f"flows array length={len(flows)}")
+
+    return data
 
 
 def fetch(country_iso3: str, years=None, groupby: str = None):
