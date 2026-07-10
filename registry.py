@@ -41,7 +41,7 @@ INDICATORS = {
         "source": "IFRC GO",
         "category": "narrative",
         "skip_date_filter": True,  # same reasoning as emergencies/appeals — best available, not strictly dated
-        "fetch": lambda country, iso3: ifrc_go.fetch("field_reports", country_iso3=iso3),
+        "fetch": lambda country, iso3: ifrc_go.fetch("field_reports", country_iso3=iso3, country_name=country),
     },
     "food_security_ipc": {
         "label": "Food security (IPC phase, by state)",
