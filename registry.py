@@ -81,7 +81,7 @@ INDICATORS = {
         "category": "funding",
         "skip_date_filter": True,  # already scoped to _YEARS at the API level — the generic
                                     # post-filter would wrongly re-narrow to DATA_START_DATE only
-        "fetch": lambda country, iso3: fts.fetch(country_iso3=iso3, years=_YEARS, groupby="cluster"),
+        "fetch": lambda country, iso3: fts.fetch(country_iso3=iso3, years=_YEARS),
     },
     "funding_cerf": {
         "label": "CERF allocations",
