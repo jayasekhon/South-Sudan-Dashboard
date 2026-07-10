@@ -173,6 +173,17 @@ def prompt_for_selection():
     return country, iso3, chosen_keys
 
 
+def _record_count(data):
+    """len() for logging purposes — for dict-shaped payloads like FTS's
+    {"flows": [...]}, count the inner list, not the dict's own key count
+    (which is always 1 and was previously producing misleading '1 records'
+    logs no matter how many flows actually came back)."""
+    if isinstance(data, dict):
+        inner = data["flows"] if "flows" in data else data.get("data")
+        return len(inner) if isinstance(inner, list) else len(data)
+    return len(data) if hasattr(data, "__len__") else None
+
+
 def fetch_all(country, iso3, indicator_keys):
     """Fetch every requested indicator, then apply the recency filter.
     Failures don't stop the run — they're recorded so the dashboard can
@@ -184,11 +195,11 @@ def fetch_all(country, iso3, indicator_keys):
         print(f"Fetching: {label} ...")
         try:
             data = fetch_indicator(key, country, iso3)
-            raw_count = len(data) if hasattr(data, "__len__") else None
+            raw_count = _record_count(data)
             if not meta.get("skip_date_filter"):
                 data = filter_recent(data)
             results[key] = {**meta, "status": "ok", "data": data}
-            n = len(data) if hasattr(data, "__len__") else "?"
+            n = _record_count(data)
             if raw_count is not None and raw_count != n:
                 print(f"  -> {n} records (filtered from {raw_count}, {DATA_START_DATE}–today)")
             else:
