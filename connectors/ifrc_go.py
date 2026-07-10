@@ -6,9 +6,15 @@ Public endpoints, no auth required.
 
 Different GO endpoints filter by country differently — this isn't
 consistent across the API:
-  - project:  accepts country_iso3 directly (string)
-  - event:    wants countries__in=<numeric GO country id>
-  - appeal, field-report, surge_alert: want country=<numeric GO country id>
+  - project:      accepts country_iso3 directly (string)
+  - event:        wants countries__in=<numeric GO country id>
+  - appeal:       wants country=<numeric GO country id> (confirmed in docs)
+  - field-report: has NO documented country=<id> filter at all — its own
+                   data dictionary only documents is_covid_report, regions,
+                   and a free-text "search" that explicitly covers the
+                   "countries and summary fields". So this one is filtered
+                   by searching the country name as text instead.
+  - surge_alert:  assumed to follow appeal's pattern (unconfirmed)
 
 fetch() resolves the ISO3 code to GO's internal country ID once (via
 /country/?iso3=...) when an endpoint needs it, and applies the right
@@ -28,13 +34,15 @@ ENDPOINTS = {
     "field_reports": "field-report",
 }
 
-# (param_name, param_type) per endpoint. param_type "iso3" sends the code
-# directly; "id" means we need to resolve it to GO's numeric country id first.
+# (param_name, param_type) per endpoint.
+#   "iso3"   -> send the ISO3 code directly
+#   "id"     -> resolve to GO's numeric country id first
+#   "search" -> send the plain country name as a free-text search
 COUNTRY_FILTER = {
     "event": ("countries__in", "id"),
     "appeal": ("country", "id"),
     "project": ("country_iso3", "iso3"),
-    "field-report": ("country", "id"),
+    "field-report": ("search", "search"),
     "surge_alert": ("country", "id"),
 }
 
@@ -67,7 +75,7 @@ def _resolve_country_id(iso3: str):
     return resolved
 
 
-def _matches_country(item, iso3):
+def _matches_country(item, iso3, country_name=None):
     """Client-side safety net: confirm a result actually belongs to the
     requested country, in case an endpoint's filter didn't behave as
     expected. Items with no embedded country info at all are kept rather
@@ -77,18 +85,25 @@ def _matches_country(item, iso3):
         return country.get("iso3") == iso3
     countries = item.get("countries")
     if isinstance(countries, list) and countries:
-        return any(isinstance(c, dict) and c.get("iso3") == iso3 for c in countries)
+        if any(isinstance(c, dict) and c.get("iso3") == iso3 for c in countries):
+            return True
+        if country_name and any(isinstance(c, dict) and c.get("name") == country_name for c in countries):
+            return True
+        return False
     return True
 
 
-def fetch(indicator: str, country_iso3: str, keyword: str = None, limit: int = 50):
+def fetch(indicator: str, country_iso3: str, country_name: str = None, keyword: str = None, limit: int = 50):
     """
     Fetch a dataset from IFRC GO for a given country.
 
     Args:
         indicator: one of ENDPOINTS keys (e.g. "emergencies", "appeals")
         country_iso3: 3-letter ISO country code (e.g. "UGA")
-        keyword: optional free-text search
+        country_name: plain country name (e.g. "Uganda") — needed for
+                      endpoints like field-report that filter by text
+                      search rather than a country ID
+        keyword: optional additional free-text search
         limit: max records to return
 
     Returns:
@@ -100,18 +115,26 @@ def fetch(indicator: str, country_iso3: str, keyword: str = None, limit: int = 5
     endpoint = ENDPOINTS[indicator]
     param_name, param_type = COUNTRY_FILTER[endpoint]
 
-    resolved_id = country_iso3 if param_type == "iso3" else _resolve_country_id(country_iso3)
-    params = {"limit": limit, param_name: resolved_id}
-    if keyword:
+    if param_type == "iso3":
+        resolved = country_iso3
+    elif param_type == "search":
+        if not country_name:
+            raise ValueError(f"'{endpoint}' needs country_name for its search-based country filter.")
+        resolved = country_name
+    else:
+        resolved = _resolve_country_id(country_iso3)
+
+    params = {"limit": limit, param_name: resolved}
+    if keyword and param_name != "search":
         params["search"] = keyword
 
     resp = requests.get(f"{BASE_URL}/{endpoint}/", params=params, timeout=30)
     resp.raise_for_status()
     body = resp.json()
     results = body.get("results", [])
-    matched = [r for r in results if _matches_country(r, country_iso3)]
+    matched = [r for r in results if _matches_country(r, country_iso3, country_name)]
 
-    print(f"  -> IFRC GO [{indicator}]: requested {param_name}={resolved_id!r}, "
+    print(f"  -> IFRC GO [{indicator}]: requested {param_name}={resolved!r}, "
           f"API reports {body.get('count', '?')} total, page returned {len(results)}, "
           f"{len(matched)} passed the country safety-check")
 
