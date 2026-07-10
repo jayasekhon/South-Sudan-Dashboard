@@ -461,6 +461,48 @@ def extract_acled_trend(data, value_col="Fatalities"):
     return df.groupby("_date")[value_col].sum().sort_index()
 
 
+def extract_cbpf_top_projects(data, top_n=10):
+    """Top N CBPF projects by budget — confirmed real columns: ChfProjectCode, Budget."""
+    df = _to_dataframe(data)
+    if df.empty or "Budget" not in df.columns:
+        return None
+    code_col = next((c for c in df.columns if "projectcode" in c.lower()), None)
+    if not code_col:
+        return None
+
+    df = df.copy()
+    df["Budget"] = pd.to_numeric(df["Budget"], errors="coerce")
+    df = df.dropna(subset=["Budget"]).sort_values("Budget", ascending=False).head(top_n)
+    if df.empty:
+        return None
+
+    # Shorten "CBPF-SSD-26-R-UN-NSFT-39248" down to just the trailing id,
+    # since the country/year/type prefix is the same for every bar.
+    labels = df[code_col].astype(str).str.split("-").str[-1].tolist()
+    return {"type": "bar", "labels": labels, "values": df["Budget"].round(0).tolist(), "value_label": "Budget (USD)"}
+
+
+def extract_cbpf_beneficiaries(data):
+    """Total beneficiaries reached by demographic group — confirmed real
+    columns: BenM/BenW/BenB/BenG (men/women/boys/girls)."""
+    df = _to_dataframe(data)
+    if df.empty:
+        return None
+
+    group_cols = {"BenM": "Men", "BenW": "Women", "BenB": "Boys", "BenG": "Girls"}
+    totals = {}
+    for col, label in group_cols.items():
+        if col in df.columns:
+            total = pd.to_numeric(df[col], errors="coerce").sum()
+            if total and total > 0:
+                totals[label] = round(total)
+
+    if not totals:
+        return None
+    return {"type": "bar", "labels": list(totals.keys()), "values": list(totals.values()),
+            "value_label": "Beneficiaries reached"}
+
+
 def extract_vam_price_trend(data, commodity_filter="Maize"):
     """
     VAM food price data has many rows per date (one per market x
@@ -913,9 +955,37 @@ def render_html(country, results, out_dir):
         category = res.get("category", "chart")
         if category == "narrative":
             narrative_html += render_narrative_card(key, res)
-        elif key in ("funding_cerf", "funding_cbpf", "funding_fts"):
-            # These are lists of individual project/allocation/flow records,
-            # not time series — a chart doesn't fit; an expandable list does.
+        elif key == "funding_cbpf" and res["status"] == "ok" and res["data"]:
+            # CBPF has real numeric substance (budget, beneficiary counts)
+            # worth charting, unlike CERF/FTS where we don't yet know the
+            # real shape — two charts for the overview, plus the existing
+            # drill-down list for individual projects.
+            top_chart = extract_cbpf_top_projects(res["data"])
+            if top_chart:
+                chart_counter += 1
+                cid = f"chart_{chart_counter}"
+                funding_html += f"""
+                <article class="card">
+                  <header><h2>Top SSHF projects by budget</h2><span class="tag">CBPF</span></header>
+                  <div class="chart-wrap"><canvas id="{cid}"></canvas></div>
+                </article>"""
+                charts_js.append({"id": cid, **top_chart})
+
+            ben_chart = extract_cbpf_beneficiaries(res["data"])
+            if ben_chart:
+                chart_counter += 1
+                cid = f"chart_{chart_counter}"
+                funding_html += f"""
+                <article class="card">
+                  <header><h2>SSHF beneficiaries reached</h2><span class="tag">CBPF</span></header>
+                  <div class="chart-wrap"><canvas id="{cid}"></canvas></div>
+                </article>"""
+                charts_js.append({"id": cid, **ben_chart})
+
+            funding_html += render_expandable_feed_card(key, res)
+        elif key in ("funding_cerf", "funding_fts"):
+            # Lists of individual project/flow records, not time series —
+            # a chart doesn't fit; an expandable list does.
             funding_html += render_expandable_feed_card(key, res)
         elif category == "funding":
             chart_counter += 1
