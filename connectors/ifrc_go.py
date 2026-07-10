@@ -132,10 +132,18 @@ def fetch(indicator: str, country_iso3: str, country_name: str = None, keyword: 
     resp.raise_for_status()
     body = resp.json()
     results = body.get("results", [])
-    matched = [r for r in results if _matches_country(r, country_iso3, country_name)]
+
+    if param_type == "search":
+        # The search query IS the filter here — there's no documented
+        # country field to double-check against, and our attempt at one
+        # was incorrectly rejecting every genuine result (unknown internal
+        # structure of the "countries" field for this endpoint).
+        matched = results
+    else:
+        matched = [r for r in results if _matches_country(r, country_iso3, country_name)]
 
     print(f"  -> IFRC GO [{indicator}]: requested {param_name}={resolved!r}, "
           f"API reports {body.get('count', '?')} total, page returned {len(results)}, "
-          f"{len(matched)} passed the country safety-check")
+          f"{len(matched)} {'kept (search-filtered, no extra check)' if param_type == 'search' else 'passed the country safety-check'}")
 
     return matched
