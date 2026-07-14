@@ -138,11 +138,18 @@ def _get_from_file(resource_id: str):
     return df.to_dict(orient="records")
 
 
-def get_geojson(resource_id: str):
+def get_geojson(resource_id: str, level: str = "1"):
     """
     Download and extract a GeoJSON file from an HDX resource. Handles both
     plain .geojson resources and .geojson files packaged inside a .zip
     (common for admin boundary datasets, e.g. ssd_admin_boundaries.geojson.zip).
+
+    Args:
+        resource_id: HDX resource id
+        level: which admin level to select when the zip bundles multiple
+               layers together — "1" for states (the choropleth map),
+               "0" for the single country outline (e.g. a hero silhouette)
+
     Returns the parsed GeoJSON dict.
     """
     import json
@@ -172,23 +179,26 @@ def get_geojson(resource_id: str):
             print(f"  -> get_geojson: zip contains {len(geojson_names)} candidate file(s): {geojson_names}")
 
             # COD-AB style zips typically bundle multiple layers together —
-            # admin0/1/2/3 AREA polygons plus a separate boundary LINES file
-            # (which has line-topology properties like left_pcod/right_pcod,
-            # not area attributes like a state name). We want an AREA file
-            # for admin level 1 specifically, not a lines file.
+            # admin0/1/2/3 AREA polygons plus separate lines/points files
+            # (which have topology properties, not area attributes like a
+            # state/country name). We want the AREA file for the requested
+            # admin level specifically.
+            target = f"adm{level}"
+            other_level_hints = [f"adm{n}" for n in "0123" if n != level]
+
             def _score(name):
-                n = name.lower()
-                if "bndl" in n or "lin" in n:
-                    return -10  # boundary lines — actively avoid
-                if "adm1" in n or "admin1" in n or "adm_1" in n:
-                    return 10   # exactly what we want
-                if "adm0" in n or "admin0" in n:
-                    return -1   # country outline, not useful for a state map
+                n = name.lower().replace("_", "").replace("admin", "adm")
+                if "line" in n or "point" in n:
+                    return -10  # boundary lines/points — actively avoid
+                if target in n:
+                    return 10   # exactly the level we want
+                if any(h in n for h in other_level_hints):
+                    return -1   # a different admin level — not what we asked for
                 return 0
 
             geojson_names.sort(key=_score, reverse=True)
             chosen = geojson_names[0]
-            print(f"  -> get_geojson: selected '{chosen}' as the best admin1-area match")
+            print(f"  -> get_geojson: selected '{chosen}' as the best admin{level}-area match")
 
             with zf.open(chosen) as f:
                 return json.loads(f.read())
