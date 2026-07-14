@@ -355,6 +355,68 @@ ADMIN_NAME_PROP_HINTS = ["admin1name", "adm1en", "adm1name", "statename"]
 IPC_COLORS = {1: "#3A7D44", 2: "#C9A227", 3: "#D9822B", 4: "#B23A2E", 5: "#6B1414"}
 
 
+def build_svg_silhouette(geojson, width=800, height=500, padding=20):
+    """
+    Convert a GeoJSON FeatureCollection's polygon geometry into an SVG path
+    'd' string — used to render the country outline as a hero visual
+    without needing any external image. Handles Polygon and MultiPolygon
+    geometries, and multiple features (e.g. offshore/enclave parts),
+    projecting lon/lat to the given pixel box with a simple equirectangular
+    fit (fine for a small single-country silhouette, no need for a real
+    map projection at this scale).
+    """
+    rings = []  # list of list of (lon, lat) points
+
+    def _collect(geometry):
+        if not geometry:
+            return
+        gtype = geometry.get("type")
+        coords = geometry.get("coordinates", [])
+        if gtype == "Polygon":
+            for ring in coords:
+                rings.append(ring)
+        elif gtype == "MultiPolygon":
+            for polygon in coords:
+                for ring in polygon:
+                    rings.append(ring)
+
+    for feature in geojson.get("features", []):
+        _collect(feature.get("geometry"))
+
+    if not rings:
+        return None
+
+    all_points = [pt for ring in rings for pt in ring]
+    lons = [p[0] for p in all_points]
+    lats = [p[1] for p in all_points]
+    min_lon, max_lon = min(lons), max(lons)
+    min_lat, max_lat = min(lats), max(lats)
+    lon_span = max_lon - min_lon or 1
+    lat_span = max_lat - min_lat or 1
+
+    # Fit the shape into the box while preserving aspect ratio
+    avail_w, avail_h = width - 2 * padding, height - 2 * padding
+    scale = min(avail_w / lon_span, avail_h / lat_span)
+    draw_w, draw_h = lon_span * scale, lat_span * scale
+    offset_x = padding + (avail_w - draw_w) / 2
+    offset_y = padding + (avail_h - draw_h) / 2
+
+    def _project(lon, lat):
+        x = offset_x + (lon - min_lon) * scale
+        y = offset_y + (max_lat - lat) * scale  # flip: lat increases north, svg y increases down
+        return round(x, 1), round(y, 1)
+
+    path_parts = []
+    for ring in rings:
+        if len(ring) < 3:
+            continue
+        points = [_project(lon, lat) for lon, lat in ring]
+        d = f"M {points[0][0]},{points[0][1]} " + " ".join(f"L {x},{y}" for x, y in points[1:]) + " Z"
+        path_parts.append(d)
+
+    return " ".join(path_parts)
+
+
 def fetch_boundaries():
     """Load South Sudan admin1 boundaries for the map. Returns None (map
     section is skipped gracefully) if this fails — it's supplementary,
@@ -570,6 +632,93 @@ def build_state_values(data, value_hints, agg="max"):
         key = normalize_admin_name(name)
         result[key] = max(result.get(key, val), val) if agg == "max" else result.get(key, 0) + val
     return result
+
+
+def render_hero_section(country, silhouette_path, indicator_count, source_count):
+    """
+    Dark 3D-parallax hero replacing the old plain masthead — same visual
+    language as a layered depth scene (mouse-reactive rotation, grain
+    texture) but built from the country's real boundary shape instead of
+    stock photography, and using this project's existing color tokens
+    rather than introducing an unrelated palette.
+    """
+    if not silhouette_path:
+        # Fall back to the old plain masthead if the shape couldn't be built
+        return f"""
+        <div class="masthead">
+          <h1>{country} — Humanitarian Situation Monitor</h1>
+          <p>GENERATED {date.today().isoformat()} · SOURCES: RELIEFWEB · IFRC GO · HDX · FTS · CERF · CBPF</p>
+        </div>"""
+
+    return f"""
+    <div class="hero" id="hero">
+      <svg class="hero-defs" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <path id="ssd-shape" d="{silhouette_path}"></path>
+          <filter id="hero-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+        </defs>
+      </svg>
+      <div class="hero-grain" style="filter:url(#hero-grain)"></div>
+
+      <div class="hero-viewport">
+        <div class="hero-canvas" id="hero-canvas">
+          <svg class="hero-layer hero-layer-1" viewBox="0 0 800 500"><use href="#ssd-shape" fill="#24382F"></use></svg>
+          <svg class="hero-layer hero-layer-2" viewBox="0 0 800 500"><use href="#ssd-shape" fill="none" stroke="#C98A3D" stroke-width="2.5"></use></svg>
+          <svg class="hero-layer hero-layer-3" viewBox="0 0 800 500">
+            <clipPath id="ssd-clip"><use href="#ssd-shape"></use></clipPath>
+            <g clip-path="url(#ssd-clip)">
+              <rect x="0" y="0" width="800" height="500" fill="url(#hero-contours)"></rect>
+            </g>
+            <defs>
+              <pattern id="hero-contours" width="42" height="42" patternUnits="userSpaceOnUse">
+                <circle cx="21" cy="21" r="18" fill="none" stroke="#1F6F5C" stroke-width="0.6" opacity="0.5"></circle>
+              </pattern>
+            </defs>
+          </svg>
+        </div>
+      </div>
+
+      <div class="hero-grid">
+        <div class="hero-topline">SOUTH SUDAN MONITOR</div>
+        <div class="hero-coords">{indicator_count} INDICATORS · {source_count} SOURCES</div>
+        <h1 class="hero-title">SOUTH<br>SUDAN</h1>
+        <div class="hero-bottom">
+          <div class="hero-meta">[ HUMANITARIAN SITUATION MONITOR ]<br>GENERATED {date.today().isoformat()}</div>
+          <a href="#map-section" class="hero-cta">VIEW DASHBOARD</a>
+        </div>
+      </div>
+    </div>"""
+
+
+def build_hero_init_js():
+    """Mouse-parallax + entrance animation for the hero, mirroring the
+    layered-depth technique — plain JS, no build step needed."""
+    return (
+        "var heroCanvas = document.getElementById('hero-canvas');\n"
+        "if (heroCanvas) {\n"
+        "  var heroLayers = document.querySelectorAll('.hero-layer');\n"
+        "  heroCanvas.style.opacity = '0';\n"
+        "  heroCanvas.style.transform = 'rotateX(90deg) rotateZ(0deg) scale(0.85)';\n"
+        "  setTimeout(function() {\n"
+        "    heroCanvas.style.transition = 'all 2s cubic-bezier(0.16, 1, 0.3, 1)';\n"
+        "    heroCanvas.style.opacity = '1';\n"
+        "    heroCanvas.style.transform = 'rotateX(55deg) rotateZ(-18deg) scale(1)';\n"
+        "  }, 200);\n"
+        "  window.addEventListener('mousemove', function(e) {\n"
+        "    var x = (window.innerWidth / 2 - e.pageX) / 30;\n"
+        "    var y = (window.innerHeight / 2 - e.pageY) / 30;\n"
+        "    heroCanvas.style.transform = 'rotateX(' + (55 + y / 2) + 'deg) rotateZ(' + (-18 + x / 2) + 'deg)';\n"
+        "    heroLayers.forEach(function(layer, i) {\n"
+        "      var depth = (i + 1) * 14;\n"
+        "      var mx = x * (i + 1) * 0.15, my = y * (i + 1) * 0.15;\n"
+        "      layer.style.transform = 'translateZ(' + depth + 'px) translate(' + mx + 'px,' + my + 'px)';\n"
+        "    });\n"
+        "  });\n"
+        "}\n"
+    )
 
 
 def render_map_section(boundaries, ipc_data):
@@ -934,6 +1083,18 @@ def render_kpi_strip(kpis):
 def render_html(country, results, out_dir):
     kpis = render_kpi_strip(compute_kpis(results))
 
+    # Hero: fetch the country outline (admin0) once for the parallax visual.
+    # Falls back to a plain masthead if this fails for any reason — this is
+    # decorative, not core data, so it shouldn't be able to break the run.
+    silhouette_path = None
+    try:
+        from connectors import hdx
+        country_outline = hdx.get_geojson(BOUNDARY_RESOURCE_ID, level="0")
+        silhouette_path = build_svg_silhouette(country_outline)
+    except Exception as e:
+        print(f"  -> Hero: could not build country silhouette: {e}")
+    hero_html = render_hero_section(country, silhouette_path, len(results), 6)
+
     # Map: only bother fetching boundaries if we have something to show on it
     map_html, map_config = "", None
     ipc_res = results.get("food_security_ipc")
@@ -956,33 +1117,36 @@ def render_html(country, results, out_dir):
         if category == "narrative":
             narrative_html += render_narrative_card(key, res)
         elif key == "funding_cbpf" and res["status"] == "ok" and res["data"]:
-            # CBPF has real numeric substance (budget, beneficiary counts)
-            # worth charting, unlike CERF/FTS where we don't yet know the
-            # real shape — two charts for the overview, plus the existing
-            # drill-down list for individual projects.
+            # One consolidated card: quick stats + a single clear chart,
+            # rather than three separate cards for one data source.
+            df_cbpf = _to_dataframe(res["data"])
+            total_budget = pd.to_numeric(df_cbpf["Budget"], errors="coerce").sum() if "Budget" in df_cbpf.columns else 0
+            total_ben = sum(
+                pd.to_numeric(df_cbpf[c], errors="coerce").sum()
+                for c in ["BenM", "BenW", "BenB", "BenG"] if c in df_cbpf.columns
+            )
+            project_count = len(df_cbpf)
+
+            stats_html = f"""
+            <div class="mini-stats">
+              <div><span class="mini-stat-value">${total_budget:,.0f}</span><span class="mini-stat-label">Total budget</span></div>
+              <div><span class="mini-stat-value">{total_ben:,.0f}</span><span class="mini-stat-label">Beneficiaries reached</span></div>
+              <div><span class="mini-stat-value">{project_count}</span><span class="mini-stat-label">Projects</span></div>
+            </div>"""
+
             top_chart = extract_cbpf_top_projects(res["data"])
             if top_chart:
                 chart_counter += 1
                 cid = f"chart_{chart_counter}"
                 funding_html += f"""
                 <article class="card">
-                  <header><h2>Top SSHF projects by budget</h2><span class="tag">CBPF</span></header>
+                  <header><h2>{res.get('label', key)}</h2><span class="tag">CBPF</span></header>
+                  {stats_html}
                   <div class="chart-wrap"><canvas id="{cid}"></canvas></div>
                 </article>"""
                 charts_js.append({"id": cid, **top_chart})
-
-            ben_chart = extract_cbpf_beneficiaries(res["data"])
-            if ben_chart:
-                chart_counter += 1
-                cid = f"chart_{chart_counter}"
-                funding_html += f"""
-                <article class="card">
-                  <header><h2>SSHF beneficiaries reached</h2><span class="tag">CBPF</span></header>
-                  <div class="chart-wrap"><canvas id="{cid}"></canvas></div>
-                </article>"""
-                charts_js.append({"id": cid, **ben_chart})
-
-            funding_html += render_expandable_feed_card(key, res)
+            else:
+                funding_html += render_expandable_feed_card(key, res)
         elif key in ("funding_cerf", "funding_fts"):
             # Lists of individual project/flow records, not time series —
             # a chart doesn't fit; an expandable list does.
@@ -1031,6 +1195,7 @@ def render_html(country, results, out_dir):
         }});"""
 
     map_init_js = build_map_init_js(map_config)
+    hero_init_js = build_hero_init_js()
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1069,6 +1234,61 @@ def render_html(country, results, out_dir):
   }}
   .masthead h1 {{ font-size: 24px; letter-spacing: 0.01em; }}
   .masthead p {{ margin: 6px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; opacity: 0.7; }}
+
+  .hero {{
+    position: relative; height: 72vh; min-height: 480px; max-height: 720px;
+    background: #0E1613; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }}
+  .hero-defs {{ position: absolute; width: 0; height: 0; }}
+  .hero-grain {{ position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0.1; }}
+  .hero-viewport {{
+    perspective: 1800px; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }}
+  .hero-canvas {{
+    position: relative; width: min(70vw, 720px); height: min(43.75vw, 450px);
+    transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }}
+  .hero-layer {{
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transition: transform 0.5s ease; pointer-events: none;
+  }}
+  .hero-layer-2 {{ opacity: 0.85; }}
+  .hero-layer-3 {{ opacity: 0.6; mix-blend-mode: screen; }}
+
+  .hero-grid {{
+    position: absolute; inset: 0; padding: clamp(20px, 4vw, 56px);
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr auto;
+    z-index: 10; pointer-events: none;
+  }}
+  .hero-topline {{
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+    color: var(--bg); font-weight: 600;
+  }}
+  .hero-coords {{
+    text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: #C98A3D; letter-spacing: 0.05em;
+  }}
+  .hero-title {{
+    grid-column: 1 / -1; align-self: center; color: var(--bg);
+    font-family: 'Roboto Slab', serif; font-weight: 700;
+    font-size: clamp(2.5rem, 9vw, 7rem); line-height: 0.9; letter-spacing: -0.02em;
+    mix-blend-mode: difference;
+  }}
+  .hero-bottom {{
+    grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;
+  }}
+  .hero-meta {{
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--bg); opacity: 0.75; line-height: 1.6;
+  }}
+  .hero-cta {{
+    pointer-events: auto; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-decoration: none;
+    padding: 12px 22px; white-space: nowrap;
+    clip-path: polygon(0 0, 100% 0, 100% 65%, 88% 100%, 0 100%);
+    transition: 0.25s ease;
+  }}
+  .hero-cta:hover {{ background: #C98A3D; color: var(--bg); transform: translateY(-3px); }}
 
   .subnav {{
     position: sticky; top: 0; z-index: 20; background: var(--paper);
@@ -1128,6 +1348,11 @@ def render_html(country, results, out_dir):
 
   #ssd-map {{ height: 420px; border-radius: 6px; z-index: 1; }}
   .chart-wrap {{ position: relative; height: 220px; }}
+
+  .mini-stats {{ display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap; }}
+  .mini-stats > div {{ display: flex; flex-direction: column; gap: 2px; }}
+  .mini-stat-value {{ font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; }}
+  .mini-stat-label {{ font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }}
   .map-legend {{
     display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11px; color: var(--muted);
   }}
@@ -1192,10 +1417,7 @@ def render_html(country, results, out_dir):
 </style>
 </head>
 <body>
-  <div class="masthead">
-    <h1>{country} — Humanitarian Situation Monitor</h1>
-    <p>GENERATED {date.today().isoformat()} · SOURCES: RELIEFWEB · IFRC GO · HDX · FTS · CERF · CBPF</p>
-  </div>
+  {hero_html}
 
   <nav class="subnav">
     <a href="#map-section">Map</a>
@@ -1242,6 +1464,7 @@ def render_html(country, results, out_dir):
     }});
     {chart_init_js}
     {map_init_js}
+    {hero_init_js}
   </script>
 </body>
 </html>"""
