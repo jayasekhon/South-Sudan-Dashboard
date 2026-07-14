@@ -853,8 +853,17 @@ def render_expandable_feed_card(key, res, max_items=15):
     date_keys = ["date", "Date", "DateOfAlloc", "year", "Year", "AllocationDate"]
     amount_keys = ["amount", "Amount", "amountUSD", "budget", "Budget", "TargetAmt"]
 
+    def _sort_key(item):
+        raw = next((item[k] for k in date_keys if item.get(k) not in (None, "")), None)
+        if raw is None:
+            return pd.Timestamp.min
+        parsed = _parse_date_value(raw)
+        return parsed if pd.notna(parsed) else pd.Timestamp.min
+
+    sorted_data = sorted(data, key=_sort_key, reverse=True)  # newest first
+
     items_html = ""
-    for i, item in enumerate(list(data)[:max_items]):
+    for i, item in enumerate(sorted_data[:max_items]):
         item_id = f"{key}-{i}"
         title = next((item[k] for k in title_keys if item.get(k) not in (None, "")), "Untitled")
         date_val = next((item[k] for k in date_keys if item.get(k) not in (None, "")), "")
