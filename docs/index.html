@@ -221,7 +221,7 @@
   
         <div class="masthead">
           <h1>South Sudan — Humanitarian Situation Monitor</h1>
-          <p>GENERATED 2026-10-13 · SOURCES: RELIEFWEB · IFRC GO · HDX · FTS · CERF · CBPF</p>
+          <p>GENERATED 2026-10-14 · SOURCES: RELIEFWEB · IFRC GO · HDX · FTS · CERF · CBPF</p>
         </div>
 
   <nav class="subnav">
@@ -248,6 +248,11 @@
           <span class="kpi-label">Displaced (latest)</span>
         </div>
         <div class="kpi">
+          <span class="kpi-dot kpi-dot--ok"></span>
+          <span class="kpi-value">250,807</span>
+          <span class="kpi-label">SSHF allocated (USD)</span>
+        </div>
+        <div class="kpi">
           <span class="kpi-dot kpi-dot--neutral"></span>
           <span class="kpi-value">14</span>
           <span class="kpi-label">Active emergencies</span>
@@ -268,7 +273,7 @@
       <div class="grid grid--narrow">
     <article class="card">
       <header><h2>Humanitarian situation reports</h2><span class="tag">ReliefWeb</span></header>
-      <ul class="feed"><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233838" target="_blank" rel="noopener">WFP South Sudan Weekly Market Monitor (28 September - 4 October 2026)</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233837" target="_blank" rel="noopener">Eastern Africa: El Niño Status and Humanitarian Impacts (September 2026)</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233713" target="_blank" rel="noopener">WHO South Sudan - Voices from the field: Issue #23, 12 October 2026</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233589" target="_blank" rel="noopener">Strengthening disaster risk governance in South Sudan</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233562" target="_blank" rel="noopener">Eastern Africa: Humanitarian Snapshot (As of October 2026)</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233494" target="_blank" rel="noopener">Mental Health in South Sudan: The Invisible Burden</a></li><li><span class="feed-date">2026-10-09</span><a href="https://reliefweb.int/node/4233332" target="_blank" rel="noopener">MSF marks World Mental Health Day, 10th Oct, with stories from projects in South Sudan, Lebanon and Greece</a></li><li><span class="feed-date">2026-10-09</span><a href="https://reliefweb.int/node/4233269" target="_blank" rel="noopener">WHO Weekly Situation Update on Ongoing Health Emergency Events in South Sudan - Week #40, Date: 28 Sep – 4 Oct 2026</a></li></ul>
+      <ul class="feed"><li><span class="feed-date">2026-10-14</span><a href="https://reliefweb.int/node/4233931" target="_blank" rel="noopener">African Development Bank concludes supervision mission for $55 million health emergency project Sudan Health Emergency and Infrastructure Project</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233891" target="_blank" rel="noopener">Ebola Outbreak, DRC and Region, Situation Report #14 (October 13, 2026)</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233864" target="_blank" rel="noopener">Aid in Danger Bi-Monthly News Brief (01-15 September 2026)</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233851" target="_blank" rel="noopener">Understanding protection risks and needs among refugee communities in Western Uganda and Greater Kampala (October 2026)</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233838" target="_blank" rel="noopener">WFP South Sudan Weekly Market Monitor (28 September - 4 October 2026)</a></li><li><span class="feed-date">2026-10-13</span><a href="https://reliefweb.int/node/4233837" target="_blank" rel="noopener">Eastern Africa: El Niño Status and Humanitarian Impacts (September 2026)</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233713" target="_blank" rel="noopener">WHO South Sudan - Voices from the field: Issue #23, 12 October 2026</a></li><li><span class="feed-date">2026-10-12</span><a href="https://reliefweb.int/node/4233589" target="_blank" rel="noopener">Strengthening disaster risk governance in South Sudan</a></li></ul>
       <p class="muted small">50 total record(s)</p>
     </article>
     <article class="card">
@@ -652,10 +657,16 @@
         </dialog></div>
       <p class="muted small">24 total record(s) — showing first 15</p>
     </article>
-        <article class="card card--error">
-          <header><h2>SSHF (Country-Based Pooled Fund) projects</h2><span class="tag">CBPF</span></header>
-          <p class="muted">Could not fetch this — 500 Server Error: Internal Server Error for url: https://cbpfapi.unocha.org/vo3/odata/GlobalGenericDataExtract?SPCode=PF_PROJ_SUMMARY&PoolfundCodeAbbrv=&ShowAllPooledFunds=&AllocationYears=2025_2026&FundTypeId=1&%24format=csv</p>
-        </article></div>
+                <article class="card">
+                  <header><h2>SSHF (Country-Based Pooled Fund) projects</h2><span class="tag">CBPF</span></header>
+                  
+            <div class="mini-stats">
+              <div><span class="mini-stat-value">$192,590,212</span><span class="mini-stat-label">Total budget</span></div>
+              <div><span class="mini-stat-value">9,459,205</span><span class="mini-stat-label">Beneficiaries reached</span></div>
+              <div><span class="mini-stat-value">165</span><span class="mini-stat-label">Projects</span></div>
+            </div>
+                  <div class="chart-wrap"><canvas id="chart_5"></canvas></div>
+                </article></div>
     </section>
   </main>
 
@@ -675,10 +686,10 @@
         new Chart(document.getElementById('chart_1'), {
           type: 'line',
           data: {
-            labels: ["2026-02-01", "2026-02-11", "2026-02-21", "2026-03-01", "2026-03-11", "2026-03-21", "2026-04-01", "2026-04-11", "2026-04-21", "2026-05-01", "2026-05-11", "2026-05-21", "2026-06-01", "2026-06-11", "2026-06-21", "2026-07-01", "2026-07-11", "2026-07-21", "2026-08-01", "2026-08-11", "2026-08-21", "2026-09-01", "2026-09-11", "2026-09-21"],
+            labels: ["2026-02-11", "2026-02-21", "2026-03-01", "2026-03-11", "2026-03-21", "2026-04-01", "2026-04-11", "2026-04-21", "2026-05-01", "2026-05-11", "2026-05-21", "2026-06-01", "2026-06-11", "2026-06-21", "2026-07-01", "2026-07-11", "2026-07-21", "2026-08-01", "2026-08-11", "2026-08-21", "2026-09-01", "2026-09-11", "2026-09-21", "2026-10-01"],
             datasets: [{
               label: "Rainfall (% of average)",
-              data: [108.81, 120.1, 117.9, 94.28, 155.38, 200.83, 134.49, 81.93, 100.53, 89.12, 130.72, 58.28, 91.31, 62.16, 91.28, 95.37, 78.1, 83.03, 90.51, 73.61, 43.41, 70.55, 83.17, 103.98],
+              data: [120.1, 117.9, 94.28, 155.38, 200.83, 134.49, 81.93, 100.53, 89.12, 130.72, 58.28, 91.31, 62.16, 91.28, 95.37, 78.1, 83.03, 90.51, 73.61, 43.41, 70.55, 83.17, 103.98, 83.62],
               borderColor: '#1F6F5C',
               backgroundColor: "rgba(31,111,92,0.12)",
               fill: true,
@@ -757,6 +768,31 @@
               borderColor: '#1F6F5C',
               backgroundColor: "rgba(31,111,92,0.12)",
               fill: true,
+              tension: 0.3,
+              borderWidth: 2,
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } },
+              y: { grid: { color: '#E1E5DC' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 } } }
+            }
+          }
+        });
+        new Chart(document.getElementById('chart_5'), {
+          type: 'bar',
+          data: {
+            labels: ["39248", "39300", "39256", "40299", "39255", "39544", "41304", "39262", "39267", "39265"],
+            datasets: [{
+              label: "Budget (USD)",
+              data: [32702940.0, 12059502.0, 11501750.0, 11350000.0, 10983552.0, 2999957.0, 2850000.0, 2534404.0, 2361715.0, 2221493.0],
+              borderColor: '#1F6F5C',
+              backgroundColor: "#C98A3D",
+              fill: false,
               tension: 0.3,
               borderWidth: 2,
               borderRadius: 4,
