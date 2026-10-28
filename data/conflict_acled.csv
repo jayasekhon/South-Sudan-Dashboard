@@ -623,7 +623,7 @@ South Sudan,Western Equatoria,Mvolo,SSD,SS1006,SS10,August,2026,0,0
 South Sudan,Western Equatoria,Nagero,SSD,SS1007,SS10,August,2026,0,0
 South Sudan,Western Equatoria,Tambura,SSD,SS1009,SS10,August,2026,0,0
 South Sudan,Western Equatoria,Yambio,SSD,SS1010,SS10,August,2026,0,0
-South Sudan,Central Equatoria,Juba,SSD,SS0101,SS01,September,2026,5,17
+South Sudan,Central Equatoria,Juba,SSD,SS0101,SS01,September,2026,6,18
 South Sudan,Central Equatoria,Kajo Keji,SSD,SS0102,SS01,September,2026,0,0
 South Sudan,Central Equatoria,Lainya,SSD,SS0103,SS01,September,2026,0,0
 South Sudan,Central Equatoria,Morobo,SSD,SS0104,SS01,September,2026,1,2
@@ -681,7 +681,7 @@ South Sudan,Upper Nile,Manyo,SSD,SS0708,SS07,September,2026,0,0
 South Sudan,Upper Nile,Melut,SSD,SS0709,SS07,September,2026,0,0
 South Sudan,Upper Nile,Panyikang,SSD,SS0710,SS07,September,2026,0,0
 South Sudan,Upper Nile,Renk,SSD,SS0711,SS07,September,2026,0,0
-South Sudan,Upper Nile,Ulang,SSD,SS0712,SS07,September,2026,5,66
+South Sudan,Upper Nile,Ulang,SSD,SS0712,SS07,September,2026,6,67
 South Sudan,Warrap,Gogrial East,SSD,SS0801,SS08,September,2026,1,4
 South Sudan,Warrap,Gogrial West,SSD,SS0802,SS08,September,2026,1,2
 South Sudan,Warrap,Tonj East,SSD,SS0803,SS08,September,2026,1,0
@@ -701,31 +701,31 @@ South Sudan,Western Equatoria,Mvolo,SSD,SS1006,SS10,September,2026,1,3
 South Sudan,Western Equatoria,Nagero,SSD,SS1007,SS10,September,2026,1,0
 South Sudan,Western Equatoria,Tambura,SSD,SS1009,SS10,September,2026,0,0
 South Sudan,Western Equatoria,Yambio,SSD,SS1010,SS10,September,2026,0,0
-South Sudan,Central Equatoria,Juba,SSD,SS0101,SS01,October,2026,1,3
+South Sudan,Central Equatoria,Juba,SSD,SS0101,SS01,October,2026,2,3
 South Sudan,Central Equatoria,Kajo Keji,SSD,SS0102,SS01,October,2026,1,0
 South Sudan,Central Equatoria,Lainya,SSD,SS0103,SS01,October,2026,0,0
-South Sudan,Central Equatoria,Morobo,SSD,SS0104,SS01,October,2026,3,0
+South Sudan,Central Equatoria,Morobo,SSD,SS0104,SS01,October,2026,4,0
 South Sudan,Central Equatoria,Terekeka,SSD,SS0105,SS01,October,2026,0,0
-South Sudan,Central Equatoria,Yei,SSD,SS0106,SS01,October,2026,1,0
-South Sudan,Eastern Equatoria,Budi,SSD,SS0201,SS02,October,2026,0,0
+South Sudan,Central Equatoria,Yei,SSD,SS0106,SS01,October,2026,2,1
+South Sudan,Eastern Equatoria,Budi,SSD,SS0201,SS02,October,2026,2,1
 South Sudan,Eastern Equatoria,Ikotos,SSD,SS0202,SS02,October,2026,0,0
 South Sudan,Eastern Equatoria,Kapoeta East,SSD,SS0203,SS02,October,2026,0,0
 South Sudan,Eastern Equatoria,Kapoeta North,SSD,SS0204,SS02,October,2026,0,0
-South Sudan,Eastern Equatoria,Kapoeta South,SSD,SS0205,SS02,October,2026,0,0
+South Sudan,Eastern Equatoria,Kapoeta South,SSD,SS0205,SS02,October,2026,1,0
 South Sudan,Eastern Equatoria,Lafon,SSD,SS0206,SS02,October,2026,0,0
 South Sudan,Eastern Equatoria,Magwi,SSD,SS0207,SS02,October,2026,0,0
 South Sudan,Eastern Equatoria,Torit,SSD,SS0208,SS02,October,2026,0,0
-South Sudan,Jonglei,Akobo,SSD,SS0301,SS03,October,2026,3,6
-South Sudan,Jonglei,Ayod,SSD,SS0302,SS03,October,2026,0,0
-South Sudan,Jonglei,Bor South,SSD,SS0303,SS03,October,2026,0,0
-South Sudan,Jonglei,Canal/Pigi,SSD,SS0304,SS03,October,2026,0,0
+South Sudan,Jonglei,Akobo,SSD,SS0301,SS03,October,2026,4,8
+South Sudan,Jonglei,Ayod,SSD,SS0302,SS03,October,2026,1,5
+South Sudan,Jonglei,Bor South,SSD,SS0303,SS03,October,2026,3,5
+South Sudan,Jonglei,Canal/Pigi,SSD,SS0304,SS03,October,2026,1,0
 South Sudan,Jonglei,Duk,SSD,SS0305,SS03,October,2026,0,0
 South Sudan,Jonglei,Fangak,SSD,SS0306,SS03,October,2026,1,0
 South Sudan,Jonglei,Nyirol,SSD,SS0307,SS03,October,2026,0,0
 South Sudan,Jonglei,Pibor,SSD,SS0308,SS03,October,2026,0,0
 South Sudan,Jonglei,Pochalla,SSD,SS0309,SS03,October,2026,0,0
 South Sudan,Jonglei,Twic East,SSD,SS0310,SS03,October,2026,1,1
-South Sudan,Jonglei,Uror,SSD,SS0311,SS03,October,2026,0,0
+South Sudan,Jonglei,Uror,SSD,SS0311,SS03,October,2026,1,0
 South Sudan,Lakes,Awerial,SSD,SS0401,SS04,October,2026,0,0
 South Sudan,Lakes,Cueibet,SSD,SS0402,SS04,October,2026,0,0
 South Sudan,Lakes,Rumbek Centre,SSD,SS0403,SS04,October,2026,4,83
@@ -744,14 +744,14 @@ South Sudan,Unity,Guit,SSD,SS0602,SS06,October,2026,1,0
 South Sudan,Unity,Koch,SSD,SS0603,SS06,October,2026,0,0
 South Sudan,Unity,Leer,SSD,SS0604,SS06,October,2026,3,29
 South Sudan,Unity,Mayendit,SSD,SS0605,SS06,October,2026,0,0
-South Sudan,Unity,Mayom,SSD,SS0606,SS06,October,2026,2,13
-South Sudan,Unity,Panriang,SSD,SS0608,SS06,October,2026,2,13
+South Sudan,Unity,Mayom,SSD,SS0606,SS06,October,2026,3,13
+South Sudan,Unity,Panriang,SSD,SS0608,SS06,October,2026,4,18
 South Sudan,Unity,Panyijiar,SSD,SS0607,SS06,October,2026,0,0
-South Sudan,Unity,Rubkona,SSD,SS0609,SS06,October,2026,1,2
+South Sudan,Unity,Rubkona,SSD,SS0609,SS06,October,2026,2,2
 South Sudan,Upper Nile,Baliet,SSD,SS0701,SS07,October,2026,0,0
 South Sudan,Upper Nile,Fashoda,SSD,SS0702,SS07,October,2026,0,0
 South Sudan,Upper Nile,Longchuk,SSD,SS0703,SS07,October,2026,0,0
-South Sudan,Upper Nile,Luakpiny/Nasir,SSD,SS0704,SS07,October,2026,0,0
+South Sudan,Upper Nile,Luakpiny/Nasir,SSD,SS0704,SS07,October,2026,1,6
 South Sudan,Upper Nile,Maban,SSD,SS0705,SS07,October,2026,0,0
 South Sudan,Upper Nile,Maiwut,SSD,SS0706,SS07,October,2026,0,0
 South Sudan,Upper Nile,Malakal,SSD,SS0707,SS07,October,2026,1,1
@@ -762,20 +762,20 @@ South Sudan,Upper Nile,Renk,SSD,SS0711,SS07,October,2026,0,0
 South Sudan,Upper Nile,Ulang,SSD,SS0712,SS07,October,2026,0,0
 South Sudan,Warrap,Gogrial East,SSD,SS0801,SS08,October,2026,0,0
 South Sudan,Warrap,Gogrial West,SSD,SS0802,SS08,October,2026,0,0
-South Sudan,Warrap,Tonj East,SSD,SS0803,SS08,October,2026,1,26
+South Sudan,Warrap,Tonj East,SSD,SS0803,SS08,October,2026,2,29
 South Sudan,Warrap,Tonj North,SSD,SS0804,SS08,October,2026,0,0
 South Sudan,Warrap,Tonj South,SSD,SS0805,SS08,October,2026,0,0
 South Sudan,Warrap,Twic,SSD,SS0806,SS08,October,2026,0,0
-South Sudan,Western Bahr el Ghazal,Jur River,SSD,SS0901,SS09,October,2026,0,0
+South Sudan,Western Bahr el Ghazal,Jur River,SSD,SS0901,SS09,October,2026,1,0
 South Sudan,Western Bahr el Ghazal,Raja,SSD,SS0902,SS09,October,2026,0,0
 South Sudan,Western Bahr el Ghazal,Wau,SSD,SS0903,SS09,October,2026,0,0
 South Sudan,Western Equatoria,Anzara,SSD,SS1008,SS10,October,2026,0,0
 South Sudan,Western Equatoria,Ezo,SSD,SS1001,SS10,October,2026,0,0
 South Sudan,Western Equatoria,Ibba,SSD,SS1002,SS10,October,2026,0,0
 South Sudan,Western Equatoria,Maridi,SSD,SS1003,SS10,October,2026,0,0
-South Sudan,Western Equatoria,Mundri East,SSD,SS1004,SS10,October,2026,1,0
+South Sudan,Western Equatoria,Mundri East,SSD,SS1004,SS10,October,2026,3,0
 South Sudan,Western Equatoria,Mundri West,SSD,SS1005,SS10,October,2026,1,0
 South Sudan,Western Equatoria,Mvolo,SSD,SS1006,SS10,October,2026,0,0
-South Sudan,Western Equatoria,Nagero,SSD,SS1007,SS10,October,2026,0,0
+South Sudan,Western Equatoria,Nagero,SSD,SS1007,SS10,October,2026,1,6
 South Sudan,Western Equatoria,Tambura,SSD,SS1009,SS10,October,2026,0,0
 South Sudan,Western Equatoria,Yambio,SSD,SS1010,SS10,October,2026,0,0
